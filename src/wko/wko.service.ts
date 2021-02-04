@@ -78,7 +78,7 @@ export class WkoService {
     var query = this.companyRepo
       .createQueryBuilder("company");
     if (categoryLeafIds.length)
-      query.innerJoin('company.categories', 'category', 'category.wkoId IN (:categoryIds)', { categoryLeafIds });
+      query.innerJoin('company.categories', 'category', 'category.wkoId IN (:categoryIds)', { categoryIds: categoryLeafIds });
     if (locationLeafIds.length) 
       query.innerJoin('company.locations', 'location', 'location.wkoId IN (:locationIds)', { locationIds: locationLeafIds });
     console.log(query.getQueryAndParameters());
