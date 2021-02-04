@@ -1,8 +1,7 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { SSL_OP_EPHEMERAL_RSA } from 'constants';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { Browser, ElementHandle } from 'puppeteer';
 import { WkoCategory } from './entities/wkocategory.entity';
-import { Company } from './entities/company.entity';
+import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
 import { WkoLocation } from './entities/wkolocation.entity';
 const puppeteer = require('puppeteer');
@@ -24,8 +23,13 @@ export class WkoController {
     }
 
     @Get('secondLevelLocations')
-    async findAllLocations(): Promise<WkoLocation[]> {
+    async findSecondLevelLocations(): Promise<WkoLocation[]> {
         return this.wko.findSecondLevelLocations();
+    }
+
+    @Get('locations')
+    async findAllLocations(): Promise<WkoLocation[]> {
+        return this.wko.findAllLocations();
     }
 
     @Post('fetchLocations')
@@ -33,6 +37,15 @@ export class WkoController {
         var isTestRun = false;
         this.fetchLocationsTask(isTestRun ? 10 : 0);
         return true;
+    }
+
+    @Get('companies')
+    async companies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<WkoCompany[]> {
+        var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
+        var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
+        
+        console.log("Get companies for locations: " + locations + " and cats: " + categories);
+        return this.wko.getCompanies(locations, categories);
     }
 
     async fetchCategoriesTask() {

@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WkoModule } from './wko/wko.module';
 import { WkoCategory } from './wko/entities/wkocategory.entity';
-import { Company } from './wko/entities/company.entity';
+import { WkoCompany } from './wko/entities/wkocompany.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WkoLocation } from './wko/entities/wkolocation.entity';
 
@@ -16,7 +16,7 @@ import { WkoLocation } from './wko/entities/wkolocation.entity';
       username: 'root',
       password: 'abc',
       database: 'wko',
-      entities: [WkoCategory, Company, WkoLocation],
+      entities: [WkoCategory, WkoCompany, WkoLocation],
       synchronize: true,
     }),
     WkoModule
