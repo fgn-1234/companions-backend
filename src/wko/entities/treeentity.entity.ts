@@ -1,13 +1,17 @@
-import { Column, Entity, PrimaryColumn, Tree, TreeChildren, TreeParent } from "typeorm";
+import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn, TableInheritance, Tree, TreeChildren, TreeParent } from "typeorm";
 
 @Tree("materialized-path")
-export abstract class TreeEntity<T> {
-  @PrimaryColumn()
+@Entity()
+@TableInheritance({ column: { type: "varchar", name: "type" } })
+export class TreeEntity {
+  @PrimaryGeneratedColumn()
   id: number;
+  @Column()
+  wkoId: number;
   @Column()
   name: string;
   @TreeParent()
-  parent: T;
+  parent: TreeEntity;
   @TreeChildren()
-  children: T[];
+  children: TreeEntity[];
 }

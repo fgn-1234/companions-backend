@@ -6,6 +6,7 @@ import { WkoCategory } from './wko/entities/wkocategory.entity';
 import { WkoCompany } from './wko/entities/wkocompany.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WkoLocation } from './wko/entities/wkolocation.entity';
+import { TreeEntity } from './wko/entities/treeentity.entity';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { WkoLocation } from './wko/entities/wkolocation.entity';
       username: 'root',
       password: 'abc',
       database: 'wko',
-      entities: [WkoCategory, WkoCompany, WkoLocation],
+      entities: [WkoCategory, WkoCompany, WkoLocation, TreeEntity],
       synchronize: true,
     }),
     WkoModule

@@ -56,6 +56,11 @@ export class WkoController {
         return result;
     }
 
+    @Post('insertTreeEntities')
+    async insertTreeEntities() {
+        return this.wko.insertTreeEntities();
+    }
+
     async fetchCategoriesTask() {
         const browser = await puppeteer.launch({
             headless: false,
@@ -147,7 +152,7 @@ export class WkoController {
             var catId = catIdParts[catIdParts.length - 1];
             var category = new WkoCategory();
             // console.log("before: " + this.cleanWkoId(catId));
-            category.id = +this.cleanWkoId(catId);
+            category.wkoId = +this.cleanWkoId(catId);
             // console.log("klo id: " + category.wkoId);
             category.name = catName;
             if (catIdParts.length > 1) {
@@ -254,7 +259,7 @@ export class WkoController {
                 var parentLocId = +this.cleanWkoId(locIdParts[locIdParts.length - 3]);
                 console.log("parentlocid: " + parentLocId);
                 var parentLocation = await this.wko.findOneLocation(parentLocId);
-                location.parentLocation = parentLocation;
+                location.parent = parentLocation;
             }
             await this.wko.addLocation(location)
                 .then((saved) => {
