@@ -134,21 +134,21 @@ export class WkoService {
     var trees = await this.categoryTreeRepo.findTrees();
     var treesAndSubtreesWithGivenIds = await this.findCategoryTrees(trees, ids);
     // console.log("found matches: " + treesAndSubtreesWithGivenIds.map(t => t.name).join(", "));
-    var missingIds: number[] = ids.filter(id => treesAndSubtreesWithGivenIds.findIndex(e => e.wkoId == id) == -1);
+    var missingIds: number[] = ids.filter(id => treesAndSubtreesWithGivenIds.findIndex(e => e.id == id) == -1);
     if (missingIds.length) {
       console.log("Did not find entities for ids: " + missingIds.join());
     }
     var leaves = await this.getCategoryLeaves(treesAndSubtreesWithGivenIds);
-    var leavesIds = leaves.map(l => l.wkoId);
+    var leavesIds = leaves.map(l => l.id);
     var distinctLeafIds = Array.from(new Set(leavesIds));
     // console.log("categoryids " + ids + " resolved to " + distinctLeafIds);
     return distinctLeafIds;
   }
 
   async findCategoryTrees(trees: WkoCategory[], ids: number[]): Promise<WkoCategory[]> {
-    var currentLevelMatches = trees.filter(t => ids.indexOf(t.wkoId) > -1);
-    var missingIds = ids.filter(id => currentLevelMatches.findIndex(t => t.wkoId == id) == -1);
-    var nextLevelTrees = trees.map(t => t.childCategories).reduce((a, b) => { return a.concat(b); });
+    var currentLevelMatches = trees.filter(t => ids.indexOf(t.id) > -1);
+    var missingIds = ids.filter(id => currentLevelMatches.findIndex(t => t.id == id) == -1);
+    var nextLevelTrees = trees.map(t => t.children as WkoCategory[]).reduce((a, b) => { return a.concat(b); });
     var matches = currentLevelMatches;
     if (nextLevelTrees.length && missingIds.length) {
       matches.concat(await this.findCategoryTrees(nextLevelTrees, missingIds));
@@ -157,14 +157,14 @@ export class WkoService {
   }
 
   async getCategoryLeaves(categories: WkoCategory[]): Promise<WkoCategory[]> {
-    var currentLevelLeaves = categories.filter(l => l.childCategories.length == 0);
+    var currentLevelLeaves = categories.filter(l => l.children.length == 0);
     var childCategoryArray = categories
       .filter(l => currentLevelLeaves.indexOf(l) == -1)
-      .map(l => l.childCategories);
+      .map(l => l.children);
     // hat mit reduce iwie nicht funktioniert. reduce with unknown empty start value...
     var childCategories: WkoCategory[] = [];
     for (let i = 0; i < childCategoryArray.length; i++) {
-      childCategories = childCategories.concat(childCategoryArray[i]);
+      childCategories = childCategories.concat(childCategoryArray[i] as WkoCategory[]);
     }
     var result = currentLevelLeaves;
     if (childCategories.length) {

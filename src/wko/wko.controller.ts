@@ -6,6 +6,11 @@ import { WkoService } from './wko.service';
 import { WkoLocation } from './entities/wkolocation.entity';
 const puppeteer = require('puppeteer');
 
+interface WkoCompanyResponse {
+    loadingHistory: string[];
+    companies: WkoCompany[];
+}
+
 @Controller('wko')
 export class WkoController {
     constructor(private wko: WkoService) { }
@@ -40,12 +45,15 @@ export class WkoController {
     }
 
     @Get('companies')
-    async companies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<WkoCompany[]> {
+    async companies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<WkoCompanyResponse> {
         var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
         var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
-        
+
         console.log("Get companies for locations: " + locations + " and cats: " + categories);
-        return this.wko.getCompanies(locations, categories);
+        var result: WkoCompanyResponse = { companies: null, loadingHistory: null };
+        result.companies = await this.wko.getCompanies(locations, categories);
+        // result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
+        return result;
     }
 
     async fetchCategoriesTask() {
@@ -139,7 +147,7 @@ export class WkoController {
             var catId = catIdParts[catIdParts.length - 1];
             var category = new WkoCategory();
             // console.log("before: " + this.cleanWkoId(catId));
-            category.wkoId = +this.cleanWkoId(catId);
+            category.id = +this.cleanWkoId(catId);
             // console.log("klo id: " + category.wkoId);
             category.name = catName;
             if (catIdParts.length > 1) {
@@ -147,7 +155,7 @@ export class WkoController {
                 var parentCatId = +this.cleanWkoId(catIdParts[catIdParts.length - 3]);
                 console.log("parentcatid: " + parentCatId);
                 var parentCategory = await this.wko.findOneCategory(parentCatId);
-                category.parentCategory = parentCategory;
+                category.parent = parentCategory;
             }
             await this.wko.addCategory(category)
                 .then((savedCat) => {
