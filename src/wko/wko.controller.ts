@@ -4,6 +4,7 @@ import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
 import { WkoLocation } from './entities/wkolocation.entity';
+import { TreeEntity } from './entities/treeentity.entity';
 const puppeteer = require('puppeteer');
 
 interface WkoCompanyResponse {
@@ -16,8 +17,8 @@ export class WkoController {
     constructor(private wko: WkoService) { }
 
     @Get('categories')
-    async findAllCategories(): Promise<WkoCategory[]> {
-        return this.wko.findAllCategories();
+    async findAllCategories(): Promise<TreeEntity[]> {
+        return this.wko.getCategoryTrees();
     }
 
     @Post('fetchCategories')
@@ -27,14 +28,9 @@ export class WkoController {
         return true;
     }
 
-    @Get('secondLevelLocations')
-    async findSecondLevelLocations(): Promise<WkoLocation[]> {
-        return this.wko.findSecondLevelLocations();
-    }
-
     @Get('locations')
-    async findAllLocations(): Promise<WkoLocation[]> {
-        return this.wko.findAllLocations();
+    async findAllLocations(): Promise<TreeEntity[]> {
+        return this.wko.getLocationTrees();
     }
 
     @Post('fetchLocations')
@@ -49,16 +45,13 @@ export class WkoController {
         var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
         var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
 
+        await this.wko.getReducedLocationTrees(locations);
+
         console.log("Get companies for locations: " + locations + " and cats: " + categories);
         var result: WkoCompanyResponse = { companies: null, loadingHistory: null };
         result.companies = await this.wko.getCompanies(locations, categories);
-        // result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
+        result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
         return result;
-    }
-
-    @Post('insertTreeEntities')
-    async insertTreeEntities() {
-        return this.wko.insertTreeEntities();
     }
 
     async fetchCategoriesTask() {

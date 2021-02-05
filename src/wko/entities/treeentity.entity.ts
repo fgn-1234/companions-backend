@@ -14,4 +14,6 @@ export class TreeEntity {
   parent: TreeEntity;
   @TreeChildren()
   children: TreeEntity[];
+  @Column()
+  level: number;
 }
