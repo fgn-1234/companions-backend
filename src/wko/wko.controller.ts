@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { Browser, ElementHandle } from 'puppeteer';
+import { Browser, ElementHandle, Page, Request } from 'puppeteer';
 import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
@@ -11,6 +11,27 @@ interface WkoCompanyResponse {
     loadingHistory: string[];
     companies: WkoCompany[];
 }
+
+const blockedResources = [
+    'quantserve',
+    'adzerk',
+    'doubleclick',
+    'adition',
+    'exelator',
+    'sharethrough',
+    'twitter',
+    'google-analytics',
+    'fontawesome',
+    'facebook',
+    'analytics',
+    'optimizely',
+    'clicktale',
+    'mixpanel',
+    'zedo',
+    'clicksor',
+    'tiqcdn',
+    'googlesyndication',
+];
 
 @Controller('wko')
 export class WkoController {
@@ -50,8 +71,65 @@ export class WkoController {
         console.log("Get companies for locations: " + locations + " and cats: " + categories);
         var result: WkoCompanyResponse = { companies: null, loadingHistory: null };
         result.companies = await this.wko.getCompanies(locations, categories);
-        result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
+        // result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
         return result;
+    }
+    // page: Page = null;
+    // calledtwice: boolean = false;
+
+    // @Get('testSkipResources')
+    // async testSkipResources() {
+    //     if (this.page == null)
+    //         this.page = await this.getNewBrowserPage(false, 'https://firmen.wko.at/raiffeisenbank-timelkam-lenzing-puchkirchen-egen/ober%c3%b6sterreich/?firmaid=04961172-01af-46df-b5e5-3d8577ae8874&standortid=1209&standortname=timelkam%20%28gemeinde%29&branche=3911&branchenname=bank%20und%20versicherung');
+    //     else if (!this.calledtwice) {
+    //         await this.page.setRequestInterception(true);
+    //         this.page.on('request', (request) => {
+    //             //   // BLOCK IMAGES ... disabled
+    //             //   if (request.url().endsWith('.png') || request.url().endsWith('.jpg'))
+    //             //       request.abort();
+    //             //   // BLOCK CERTAIN DOMAINS
+    //             //   else 
+    //             if (blockedResources.some(resource => request.url().indexOf(resource) !== -1))
+    //                 request.abort();
+    //             // ALLOW OTHER REQUESTS
+    //             else
+    //                 request.continue();
+    //         });
+    //         this.page.goto('https://firmen.wko.at/raiffeisenbank-timelkam-lenzing-puchkirchen-egen/ober%c3%b6sterreich/?firmaid=04961172-01af-46df-b5e5-3d8577ae8874&standortid=1209&standortname=timelkam%20%28gemeinde%29&branche=3911&branchenname=bank%20und%20versicherung');
+    //         this.calledtwice = true;
+    //     }
+    //     else {
+    //         this.page.browser().close();
+    //         this.calledtwice = false;
+    //         this.page = null;
+    //     }
+
+    // }
+
+    async getNewBrowserPage(headless: boolean, url: string, blockTraceResources: boolean) {
+        const browser = await puppeteer.launch({
+            headless: headless,
+            // slowMo: 30 // slow down by 250ms
+        }) as Browser;
+        var page = (await browser.pages())[0];
+        if (blockTraceResources) {
+            await page.setRequestInterception(true);
+            page.on('request', (request) => {
+                //   // BLOCK IMAGES ... disabled
+                //   if (request.url().endsWith('.png') || request.url().endsWith('.jpg'))
+                //       request.abort();
+                //   // BLOCK CERTAIN DOMAINS
+                //   else 
+                if (blockedResources.some(resource => request.url().indexOf(resource) !== -1))
+                    request.abort();
+                // ALLOW OTHER REQUESTS
+                else
+                    request.continue();
+            });
+        }
+        // const page = await browser.newPage();
+        await page.goto(url);
+        return page;
     }
 
     async fetchCategoriesTask() {

@@ -94,11 +94,16 @@ export class WkoService {
     return distinctTrees;
   }
 
-  async getReducedLocationTrees(locationIds: number[]): Promise<TreeEntity[]> {
-    var locationtrees = await this.getLocationTrees();
-    locationtrees = await this.findTrees(locationtrees, locationIds);
-    locationtrees = await this.reduceRedundancies(locationtrees);
-    return locationtrees;
+  async getReducedLocationTrees(ids: number[]): Promise<TreeEntity[]> {
+    return this.getReducedTrees(await this.getLocationTrees(), ids);
+  }
+
+  async getReducedCategoryTrees(ids: number[]): Promise<TreeEntity[]> {
+    return this.getReducedTrees(await this.getCategoryTrees(), ids);
+  }
+
+  async getReducedTrees(trees: TreeEntity[], ids: number[]): Promise<TreeEntity[]> {
+    return await this.reduceRedundancies(await this.findTrees(trees, ids));
   }
 
   async getLocationTrees(): Promise<TreeEntity[]> {
@@ -170,7 +175,16 @@ export class WkoService {
   }
 
   async getLoadingHistory(locations: number[], categories: number[]): Promise<WkoLoadingHistory[]> {
+    var reducedLocationTrees = await this.getReducedLocationTrees(locations);
+    var reducedCategoryTrees = await this.getReducedCategoryTrees(categories);
+     // get second level items TODO
+
+
     return [];
+  }
+
+  getMinLevelTreeItems(trees: TreeEntity[], level: number) {
+
   }
 
   async getPendingLoadingHistory(): Promise<WkoLoadingHistory[]> {
