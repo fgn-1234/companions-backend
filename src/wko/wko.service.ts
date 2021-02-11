@@ -7,7 +7,6 @@ import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoLocation } from './entities/wkolocation.entity';
 import { from, pipe } from 'rxjs';
 import { map, filter, distinct } from 'rxjs/operators';
-import { WkoLoadingHistory } from './entities/wkoloadinghistory.entity';
 
 interface TreeWithAllDescendantIds {
   tree: TreeEntity;
@@ -21,7 +20,8 @@ export class WkoService {
     @InjectRepository(WkoLocation) private locationTreeRepo: TreeRepository<WkoLocation>,
     @InjectRepository(TreeEntity) private treeEntityRepo: TreeRepository<TreeEntity>,
     @InjectRepository(WkoCompany) private companyRepo: Repository<WkoCompany>,
-    @InjectRepository(WkoLoadingHistory) private loadingHistoryRepo: Repository<WkoLoadingHistory>) { }
+    // @InjectRepository(WkoLoadingHistory) private loadingHistoryRepo: Repository<WkoLoadingHistory>
+    ) { }
 
   findOneCategory(wkoId: number): Promise<WkoCategory> {
     return this.categoryTreeRepo.findOne({
@@ -174,25 +174,30 @@ export class WkoService {
     return result;
   }
 
-  async getLoadingHistory(locations: number[], categories: number[]): Promise<WkoLoadingHistory[]> {
-    var reducedLocationTrees = await this.getReducedLocationTrees(locations);
-    var reducedCategoryTrees = await this.getReducedCategoryTrees(categories);
-     // get second level items TODO
+  // async getLoadingHistory(locations: number[], categories: number[]): Promise<WkoLoadingHistory[]> {
+  //   var reducedLocationTrees = await this.getReducedLocationTrees(locations);
+  //   var reducedCategoryTrees = await this.getReducedCategoryTrees(categories);
+  //    // get second level items TODO
 
 
-    return [];
-  }
+  //   return [];
+  // }
 
   getMinLevelTreeItems(trees: TreeEntity[], level: number) {
 
   }
 
-  async getPendingLoadingHistory(): Promise<WkoLoadingHistory[]> {
-    return this.loadingHistoryRepo
-      .createQueryBuilder("loadingHistory")
-      .where("loadingHistory.dateFinished IS NULL")
-      .andWhere("NOT loadingHistory.cancelled")
-      .orderBy("loadingHistory.datePlanned", "ASC")
-      .getMany();
-  }
+  // async getPendingLoadingHistory(): Promise<WkoLoadingHistory[]> {
+  //   return this.loadingHistoryRepo
+  //     .createQueryBuilder("loadingHistory")
+  //     .where("loadingHistory.dateFinished IS NULL")
+  //     .andWhere("NOT loadingHistory.cancelled")
+  //     .orderBy("loadingHistory.datePlanned", "ASC")
+  //     .getMany();
+  // }
+  
+  // async saveLoadingHistoryEntries(loadingHistoryEntries: WkoLoadingHistory[]): Promise<WkoLoadingHistory[]> {
+  //   console.log(loadingHistoryEntries);
+  //   return this.loadingHistoryRepo.save(loadingHistoryEntries);
+  // }
 }

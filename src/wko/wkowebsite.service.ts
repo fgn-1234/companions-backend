@@ -3,6 +3,7 @@ import { WkoService } from './wko.service';
 import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoLocation } from './entities/wkolocation.entity';
 import { Browser, ElementHandle, Page, Request } from 'puppeteer';
+import { WkoLoadingHistory } from './entities/wkoloadinghistory.entity';
 const puppeteer = require('puppeteer');
 
 const blockedResources = [
@@ -29,6 +30,7 @@ const blockedResources = [
 @Injectable()
 export class WkowebsiteService {
   constructor(private wko: WkoService) { }
+
   async getNewBrowserPage(headless: boolean, url: string, blockTraceResources: boolean) {
     const browser = await puppeteer.launch({
       headless: headless,
@@ -266,6 +268,26 @@ export class WkowebsiteService {
     // console.log(savedLocations);
     // console.log(savedLocations.length);
     return savedLocations;
+  }
+
+  async fetchCompaniesTask(locations: number[], categories: number[]) {
+    // write task to db as for each combination of loc and cat
+    var loadingHistoryEntries: WkoLoadingHistory[] = [];
+    for (let loc of locations) {
+      for (let cat of categories) {
+        var newEntry = new WkoLoadingHistory();
+        newEntry.locationId = loc;
+        newEntry.categoryId = cat;
+        newEntry.isActive = true;
+        loadingHistoryEntries.push(newEntry);
+      }
+    }
+    // var saved = await this.wko.saveLoadingHistoryEntries(loadingHistoryEntries);
+    // var unsaved = saved.filter(s => s.cancelled === undefined);
+    // if (unsaved.length) {
+    //   console.log("entries were not saved (maybe duplicates): %j",
+    //     JSON.stringify(unsaved));
+    // }
   }
 
   // page: Page = null;

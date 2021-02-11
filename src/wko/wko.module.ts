@@ -6,11 +6,10 @@ import { WkoCategory } from './entities/wkocategory.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WkoLocation } from './entities/wkolocation.entity';
 import { TreeEntity } from './entities/treeentity.entity';
-import { WkoLoadingHistory } from './entities/wkoloadinghistory.entity';
 import { WkowebsiteService } from './wkowebsite.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WkoCategory, WkoCompany, WkoLocation, TreeEntity, WkoLoadingHistory])],
+  imports: [TypeOrmModule.forFeature([WkoCategory, WkoCompany, WkoLocation, TreeEntity])],
   providers: [WkoService, WkowebsiteService],
   controllers: [WkoController]
 })

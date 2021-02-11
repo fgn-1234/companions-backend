@@ -54,7 +54,7 @@ export class WkoController {
         return result;
     }
 
-    @Get('fetchCompanies')
+    @Post('fetchCompanies')
     async fetchCompanies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<boolean> {
         var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
         var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
@@ -63,13 +63,8 @@ export class WkoController {
         locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
         categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
 
-        this.fetchCompaniesTask(locations, categories);
+        this.wkoWebsite.fetchCompaniesTask(locations, categories);
 
         return true;
     }
-
-    async fetchCompaniesTask(locations: number[], categories: number[]) {
-        // write task to db as for each combination of loc and cat
-
-    }    
 }
