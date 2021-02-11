@@ -7,6 +7,7 @@ import { WkoCompany } from './wko/entities/wkocompany.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WkoLocation } from './wko/entities/wkolocation.entity';
 import { TreeEntity } from './wko/entities/treeentity.entity';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
   imports: [
@@ -19,6 +20,12 @@ import { TreeEntity } from './wko/entities/treeentity.entity';
       database: 'wko',
       entities: [WkoCategory, WkoCompany, WkoLocation, TreeEntity],
       synchronize: true,
+    }),
+    BullModule.forRoot({
+      redis: {
+        host: 'localhost',
+        port: 6379,
+      },
     }),
     WkoModule
   ],

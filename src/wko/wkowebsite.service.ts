@@ -4,6 +4,8 @@ import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoLocation } from './entities/wkolocation.entity';
 import { Browser, ElementHandle, Page, Request } from 'puppeteer';
 import { WkoLoadingHistory } from './entities/wkoloadinghistory.entity';
+import { Job, Queue } from 'bull';
+import { InjectQueue, Process, Processor } from '@nestjs/bull';
 const puppeteer = require('puppeteer');
 
 const blockedResources = [
@@ -29,7 +31,8 @@ const blockedResources = [
 
 @Injectable()
 export class WkowebsiteService {
-  constructor(private wko: WkoService) { }
+  constructor(private wko: WkoService, 
+    @InjectQueue('audio') private audioQueue: Queue) { }
 
   async getNewBrowserPage(headless: boolean, url: string, blockTraceResources: boolean) {
     const browser = await puppeteer.launch({
@@ -282,6 +285,9 @@ export class WkowebsiteService {
         loadingHistoryEntries.push(newEntry);
       }
     }
+    loadingHistoryEntries.forEach(lh => {
+      this.audioQueue.add(lh);
+    });
     // var saved = await this.wko.saveLoadingHistoryEntries(loadingHistoryEntries);
     // var unsaved = saved.filter(s => s.cancelled === undefined);
     // if (unsaved.length) {
