@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, TreeRepository } from 'typeorm';
+import { getTreeRepository, Repository, TreeRepository,  } from 'typeorm';
 import { TreeEntity } from './entities/treeentity.entity';
 import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoCompany } from './entities/wkocompany.entity';
@@ -16,15 +16,15 @@ interface TreeWithAllDescendantIds {
 @Injectable()
 export class WkoService {
   constructor(
-    @InjectRepository(WkoCategory) private categoryTreeRepo: TreeRepository<WkoCategory>,
-    @InjectRepository(WkoLocation) private locationTreeRepo: TreeRepository<WkoLocation>,
+    @InjectRepository(WkoCategory) private categoryRepo: Repository<WkoCategory>,
+    @InjectRepository(WkoLocation) private locationRepo: Repository<WkoLocation>,
     @InjectRepository(TreeEntity) private treeEntityRepo: TreeRepository<TreeEntity>,
     @InjectRepository(WkoCompany) private companyRepo: Repository<WkoCompany>,
     // @InjectRepository(WkoLoadingHistory) private loadingHistoryRepo: Repository<WkoLoadingHistory>
-    ) { }
+  ) { }
 
-  findOneCategory(wkoId: number): Promise<WkoCategory> {
-    return this.categoryTreeRepo.findOne({
+  async findOneCategory(wkoId: number): Promise<WkoCategory> {
+    return this.categoryRepo.findOne({
       where: {
         wkoId
       },
@@ -32,18 +32,22 @@ export class WkoService {
   }
 
   async addCategory(category: WkoCategory): Promise<WkoCategory> {
-    return this.categoryTreeRepo.save(category);
+    return this.categoryRepo.save(category);
   }
 
-  findOneLocation(wkoId: number): Promise<WkoLocation> {
-    return this.locationTreeRepo
+  async findOneLocation(wkoId: number): Promise<WkoLocation> {
+    return this.locationRepo
       .createQueryBuilder("location")
       .where("location.wkoId=:wkoId", { wkoId: wkoId })
       .getOne();
   }
 
+  async findAncestorLocation(location: WkoLocation): Promise<WkoLocation> {
+    return (await this.treeEntityRepo.findAncestors(location))[0] as WkoLocation;
+  }
+
   async addLocation(location: WkoLocation): Promise<WkoLocation> {
-    return this.locationTreeRepo.save(location);
+    return this.locationRepo.save(location);
   }
 
   async getCompanies(locationIds: number[], categoryIds: number[]): Promise<WkoCompany[]> {
@@ -195,7 +199,7 @@ export class WkoService {
   //     .orderBy("loadingHistory.datePlanned", "ASC")
   //     .getMany();
   // }
-  
+
   // async saveLoadingHistoryEntries(loadingHistoryEntries: WkoLoadingHistory[]): Promise<WkoLoadingHistory[]> {
   //   console.log(loadingHistoryEntries);
   //   return this.loadingHistoryRepo.save(loadingHistoryEntries);

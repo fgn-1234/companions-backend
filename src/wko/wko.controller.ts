@@ -63,7 +63,7 @@ export class WkoController {
         locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
         categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
 
-        this.wkoWebsite.fetchCompaniesTask(locations, categories);
+        this.wkoWebsite.addFetchCompaniesJobs(locations, categories);
 
         return true;
     }

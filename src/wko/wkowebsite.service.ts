@@ -31,7 +31,7 @@ const blockedResources = [
 
 @Injectable()
 export class WkowebsiteService {
-  constructor(private wko: WkoService, 
+  constructor(private wko: WkoService,
     @InjectQueue('audio') private audioQueue: Queue) { }
 
   async getNewBrowserPage(headless: boolean, url: string, blockTraceResources: boolean) {
@@ -57,6 +57,7 @@ export class WkowebsiteService {
     }
     // const page = await browser.newPage();
     await page.goto(url);
+    await this.acceptCookies(page);
     return page;
   }
 
@@ -178,6 +179,10 @@ export class WkowebsiteService {
     return wkoId.replace(/\D/g, '');
   }
 
+  async acceptCookies(page: Page) {
+    await page.click('button.cookieagree');
+  }
+
   async fetchLocationsTask(testAmount: number) {
     console.log(testAmount);
     const browser = await puppeteer.launch({
@@ -273,7 +278,7 @@ export class WkowebsiteService {
     return savedLocations;
   }
 
-  async fetchCompaniesTask(locations: number[], categories: number[]) {
+  async addFetchCompaniesJobs(locations: number[], categories: number[]) {
     // write task to db as for each combination of loc and cat
     var loadingHistoryEntries: WkoLoadingHistory[] = [];
     for (let loc of locations) {
@@ -294,6 +299,71 @@ export class WkowebsiteService {
     //   console.log("entries were not saved (maybe duplicates): %j",
     //     JSON.stringify(unsaved));
     // }
+  }
+
+  /*
+  result: number of companies found. if it exceeds 1000 caller must split job to subjobs
+  **/
+  async fetchCompaniesTask(loadingEntry: WkoLoadingHistory): Promise<number> {
+    try {
+      var url = await this.buildCompanySearchUrl(loadingEntry);
+      var page = await this.getNewBrowserPage(false, url, true);
+      var resultCount = await this.getCompaniesResultCount(page);
+
+
+
+
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      await page.browser().close();
+      return 0;
+    }
+    catch (e) {
+      console.log(e);
+      return 1;
+    }
+  }
+
+  async buildCompanySearchUrl(loadingEntry: WkoLoadingHistory): Promise<string> {
+    var locationString = this.normalizeLocationStringForCompaniesSearch(loadingEntry);
+    var url = 'https://firmen.wko.at/-/';
+    url += locationString + '/';
+    var categoryString = 'branche=' + loadingEntry.categoryId;
+    url += '?' + categoryString;
+    return url;
+  }
+
+  async normalizeLocationStringForCompaniesSearch(loadingEntry: WkoLoadingHistory) : Promise<string> {
+    if (!loadingEntry.locationId)
+      throw new Error('Fetch Companies: locationid not set!');
+    var location = await this.wko.findOneLocation(loadingEntry.locationId);
+    let locationString = '';
+    // location is bundesland: simply take name
+    if (location.level == 1)
+      locationString = location.name;
+    // location parent is wien(1) simply take name
+    else if ((await this.wko.findAncestorLocation(location)).wkoId == 1)
+      locationString = location.name;
+    // location is lvl 2 take name with underline bezirk
+    else if (location.level == 2)
+      locationString = location.name + "_bezirk";
+    // location is lvl 3 take name with underline gemeinde
+    else if (location.level == 3)
+      locationString = location.name + "_gemeinde";
+    else
+      throw new Error('fetchCompaniesTask: locationString could not be determined.');
+
+    newLocString = locationString.toLowerCase();
+    do {
+      locationString = newLocString;
+      var newLocString = locationString.replace(" ", "-").replace(".", "-").replace("/", "-").replace("--", "-");
+    } while (newLocString !== locationString);
+    return locationString;
+  }
+
+  async getCompaniesResultCount(page: Page): Promise<number> {
+    var resultsString = await (await (await page.$('header h1 a')).getProperty('innerText')).jsonValue() as string;
+    var results = +(resultsString.replace("Treffer", "").trim());
+    return results;
   }
 
   // page: Page = null;
