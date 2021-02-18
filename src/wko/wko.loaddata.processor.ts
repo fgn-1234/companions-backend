@@ -1,30 +1,27 @@
-import { OnQueueActive, Process, Processor } from "@nestjs/bull";
+import { OnQueueProgress, Process, Processor } from "@nestjs/bull";
 import { Job } from "bull";
 import { WkoLoadingHistory } from "./entities/wkoloadinghistory.entity";
 import { WkowebsiteService } from "./wkowebsite.service";
 
-@Processor('audio')
+@Processor('loadCompanyData')
 export class WkoLoadDataProcessor {
   constructor(private website: WkowebsiteService) { }
 
   @Process()
-  async transcode(job: Job<WkoLoadingHistory>) {
-    console.log(job.data);
-    var result = await this.website.fetchCompaniesTask(job.data);
-    
-    // let progress = 0;
-    // for (let i = 0; i < 10; i++) {
-    //   console.log(job.progress());
-    //   progress += 10;
-    //   job.progress(progress);
-    // }
-    return {};
+  async processLoadCompaniesJob(job: Job<WkoLoadingHistory>) {
+    console.log("Start loading companies: " + job.data);
+    var result = await this.website.fetchCompaniesTask(job.data, (progress) => this.reportProgressFromOutside(job, progress));
+    return result;
   }
 
-  @OnQueueActive()
-  onActive(job: Job) {
-    console.log(
-      `Processing job ${job.id} of type ${job.name} with data ${job.data}...`,
-    );
+  @OnQueueProgress()
+  onProgress(job: Job, progress: number) {
+    console.log("Job " + job.id + " progressed to " + progress + "%");
+  }
+
+  async reportProgressFromOutside(job: Job, progress: number) {
+    // var activeJobs = (await queue.getJobs(["active"]));
+    // activeJobs[0].progress(progress);
+    job.progress(progress);
   }
 }

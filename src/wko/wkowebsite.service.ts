@@ -4,8 +4,8 @@ import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoLocation } from './entities/wkolocation.entity';
 import { Browser, ElementHandle, Page, Request } from 'puppeteer';
 import { WkoLoadingHistory } from './entities/wkoloadinghistory.entity';
-import { Job, Queue } from 'bull';
-import { InjectQueue, Process, Processor } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
 const puppeteer = require('puppeteer');
 
 const blockedResources = [
@@ -32,7 +32,7 @@ const blockedResources = [
 @Injectable()
 export class WkowebsiteService {
   constructor(private wko: WkoService,
-    @InjectQueue('audio') private audioQueue: Queue) { }
+    @InjectQueue('loadCompanyData') private audioQueue: Queue) { }
 
   async getNewBrowserPage(headless: boolean, url: string, blockTraceResources: boolean) {
     const browser = await puppeteer.launch({
@@ -293,23 +293,24 @@ export class WkowebsiteService {
     loadingHistoryEntries.forEach(lh => {
       this.audioQueue.add(lh);
     });
-    // var saved = await this.wko.saveLoadingHistoryEntries(loadingHistoryEntries);
-    // var unsaved = saved.filter(s => s.cancelled === undefined);
-    // if (unsaved.length) {
-    //   console.log("entries were not saved (maybe duplicates): %j",
-    //     JSON.stringify(unsaved));
-    // }
   }
 
   /*
   result: number of companies found. if it exceeds 1000 caller must split job to subjobs
   **/
-  async fetchCompaniesTask(loadingEntry: WkoLoadingHistory): Promise<number> {
+  async fetchCompaniesTask(loadingEntry: WkoLoadingHistory, reportProgress: (progress: number) => void): Promise<number> {
     try {
-      var url = await this.buildCompanySearchUrl(loadingEntry);
+      var url = await this.buildCompaniesSearchUrl(loadingEntry);
+      console.log(url);
       var page = await this.getNewBrowserPage(false, url, true);
       var resultCount = await this.getCompaniesResultCount(page);
-
+      if (resultCount < 1000) {
+        // paginate through the results: ...
+        await this.fetchCompaniesFromSearch(page, resultCount, reportProgress);
+      } else {
+        // TODO: split job to multiple subjobs
+        throw new Error("not yet implemented: too many company results");
+      }
 
 
 
@@ -318,13 +319,30 @@ export class WkowebsiteService {
       return 0;
     }
     catch (e) {
-      console.log(e);
+      console.error(e);
       return 1;
     }
   }
 
-  async buildCompanySearchUrl(loadingEntry: WkoLoadingHistory): Promise<string> {
-    var locationString = this.normalizeLocationStringForCompaniesSearch(loadingEntry);
+  async fetchCompaniesFromSearch(page: Page, resultCount: number, reportProgress: (progress: number) => void) {
+    var url = page.url();
+    var pagesCount = Math.ceil(resultCount / 10.0);
+    for (let pageNumber = 1; pageNumber <= pagesCount; pageNumber++) {
+      var urlWithPage = url;
+      if (pageNumber > 1)
+        urlWithPage += "&page=" + pageNumber;
+      await page.goto(urlWithPage);
+      await this.fetchCompaniesFromSearchPaginated(page, resultCount, pageNumber, reportProgress);
+    }
+  }
+
+  async fetchCompaniesFromSearchPaginated(page: Page, resultCount: number, pageNumber: number, reportProgress: (progress: number) => void) {
+    reportProgress(Math.min(100, Math.floor((pageNumber * 10.0) / (resultCount * 1.0) * 100)));
+    await new Promise(resolve => setTimeout(resolve, 300));    
+  }
+
+  async buildCompaniesSearchUrl(loadingEntry: WkoLoadingHistory): Promise<string> {
+    var locationString = await this.normalizeLocationStringForCompaniesSearch(loadingEntry);
     var url = 'https://firmen.wko.at/-/';
     url += locationString + '/';
     var categoryString = 'branche=' + loadingEntry.categoryId;
@@ -332,7 +350,7 @@ export class WkowebsiteService {
     return url;
   }
 
-  async normalizeLocationStringForCompaniesSearch(loadingEntry: WkoLoadingHistory) : Promise<string> {
+  async normalizeLocationStringForCompaniesSearch(loadingEntry: WkoLoadingHistory): Promise<string> {
     if (!loadingEntry.locationId)
       throw new Error('Fetch Companies: locationid not set!');
     var location = await this.wko.findOneLocation(loadingEntry.locationId);
@@ -365,37 +383,4 @@ export class WkowebsiteService {
     var results = +(resultsString.replace("Treffer", "").trim());
     return results;
   }
-
-  // page: Page = null;
-  // calledtwice: boolean = false;
-
-  // @Get('testSkipResources')
-  // async testSkipResources() {
-  //     if (this.page == null)
-  //         this.page = await this.getNewBrowserPage(false, 'https://firmen.wko.at/raiffeisenbank-timelkam-lenzing-puchkirchen-egen/ober%c3%b6sterreich/?firmaid=04961172-01af-46df-b5e5-3d8577ae8874&standortid=1209&standortname=timelkam%20%28gemeinde%29&branche=3911&branchenname=bank%20und%20versicherung');
-  //     else if (!this.calledtwice) {
-  //         await this.page.setRequestInterception(true);
-  //         this.page.on('request', (request) => {
-  //             //   // BLOCK IMAGES ... disabled
-  //             //   if (request.url().endsWith('.png') || request.url().endsWith('.jpg'))
-  //             //       request.abort();
-  //             //   // BLOCK CERTAIN DOMAINS
-  //             //   else 
-  //             if (blockedResources.some(resource => request.url().indexOf(resource) !== -1))
-  //                 request.abort();
-  //             // ALLOW OTHER REQUESTS
-  //             else
-  //                 request.continue();
-  //         });
-  //         this.page.goto('https://firmen.wko.at/raiffeisenbank-timelkam-lenzing-puchkirchen-egen/ober%c3%b6sterreich/?firmaid=04961172-01af-46df-b5e5-3d8577ae8874&standortid=1209&standortname=timelkam%20%28gemeinde%29&branche=3911&branchenname=bank%20und%20versicherung');
-  //         this.calledtwice = true;
-  //     }
-  //     else {
-  //         this.page.browser().close();
-  //         this.calledtwice = false;
-  //         this.page = null;
-  //     }
-
-  // }
-
 }

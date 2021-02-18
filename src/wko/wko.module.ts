@@ -19,7 +19,7 @@ import { WkoLoadDataProcessor } from './wko.loaddata.processor';
       TreeEntity
     ]),
     BullModule.registerQueue({
-      name: 'audio',
+      name: 'loadCompanyData',
     })],
   providers: [WkoService, WkowebsiteService, WkoLoadDataProcessor],
   controllers: [WkoController]
