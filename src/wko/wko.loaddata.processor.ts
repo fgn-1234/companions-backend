@@ -9,7 +9,7 @@ export class WkoLoadDataProcessor {
 
   @Process()
   async processLoadCompaniesJob(job: Job<WkoLoadingHistory>) {
-    console.log("Start loading companies: " + job.data);
+    console.log("Start loading companies: " + JSON.stringify(job.data));
     var result = await this.website.fetchCompaniesTask(job.data, (progress) => this.reportProgressFromOutside(job, progress));
     return result;
   }

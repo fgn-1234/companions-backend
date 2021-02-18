@@ -6,9 +6,11 @@ import { Browser, ElementHandle, Page, Request } from 'puppeteer';
 import { WkoLoadingHistory } from './entities/wkoloadinghistory.entity';
 import { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
+import { WkoCompany } from './entities/wkocompany.entity';
+import { QueryFailedError } from 'typeorm';
 const puppeteer = require('puppeteer');
 
-const blockedResources = [
+const BLOCKED_RESOURCES = [
   'quantserve',
   'adzerk',
   'doubleclick',
@@ -29,6 +31,10 @@ const blockedResources = [
   'googlesyndication',
 ];
 
+const COMPANY_SEARCH_RESULT_PAGE_SIZE = 10;
+
+const FETCH_COMPANIES_TEST_AMOUNT = 0;
+
 @Injectable()
 export class WkowebsiteService {
   constructor(private wko: WkoService,
@@ -48,7 +54,7 @@ export class WkowebsiteService {
         //       request.abort();
         //   // BLOCK CERTAIN DOMAINS
         //   else 
-        if (blockedResources.some(resource => request.url().indexOf(resource) !== -1))
+        if (BLOCKED_RESOURCES.some(resource => request.url().indexOf(resource) !== -1))
           request.abort();
         // ALLOW OTHER REQUESTS
         else
@@ -306,6 +312,7 @@ export class WkowebsiteService {
       var resultCount = await this.getCompaniesResultCount(page);
       if (resultCount < 1000) {
         // paginate through the results: ...
+        console.log("got " + resultCount + " results");
         await this.fetchCompaniesFromSearch(page, resultCount, reportProgress);
       } else {
         // TODO: split job to multiple subjobs
@@ -326,19 +333,107 @@ export class WkowebsiteService {
 
   async fetchCompaniesFromSearch(page: Page, resultCount: number, reportProgress: (progress: number) => void) {
     var url = page.url();
-    var pagesCount = Math.ceil(resultCount / 10.0);
+    var pagesCount = Math.ceil(resultCount * 1.0 / COMPANY_SEARCH_RESULT_PAGE_SIZE);
     for (let pageNumber = 1; pageNumber <= pagesCount; pageNumber++) {
       var urlWithPage = url;
       if (pageNumber > 1)
         urlWithPage += "&page=" + pageNumber;
       await page.goto(urlWithPage);
       await this.fetchCompaniesFromSearchPaginated(page, resultCount, pageNumber, reportProgress);
+      if (FETCH_COMPANIES_TEST_AMOUNT && (pageNumber * COMPANY_SEARCH_RESULT_PAGE_SIZE) > FETCH_COMPANIES_TEST_AMOUNT)
+        break;
     }
   }
 
   async fetchCompaniesFromSearchPaginated(page: Page, resultCount: number, pageNumber: number, reportProgress: (progress: number) => void) {
-    reportProgress(Math.min(100, Math.floor((pageNumber * 10.0) / (resultCount * 1.0) * 100)));
-    await new Promise(resolve => setTimeout(resolve, 300));    
+    var pageSize = COMPANY_SEARCH_RESULT_PAGE_SIZE;
+    var alreadyHandledAmount = (pageNumber - 1) * pageSize;
+    var currentPageSize = Math.min(resultCount - alreadyHandledAmount, pageSize);
+    var companyResults = await page.$$('#result article > div > div > div');
+    if (companyResults.length != currentPageSize)
+      throw new Error("fetchCompaniesFromSearchPaginated: results amount of " + companyResults.length + " does not match expected amount of " + currentPageSize);
+
+    var currentIndex = alreadyHandledAmount + 1;
+    for (let companyResult of companyResults) {
+      var company = await this.parseCompanyResult(companyResult);
+      if (company.id) {
+        this.wko.saveCompany(company)
+          // .then(c => console.log("successfully saved " + c.name))
+          .catch(e => {
+            // if (e instanceof QueryFailedError) {
+            //   var queryFailedError = e as QueryFailedError;
+            //   if (queryFailedError.message.indexOf('searchResultHtml') > -1) {
+            //     console.error("ERROR: increase size of searchResultHtml column");
+            //   } else {
+            //     console.error(e);
+            //   }
+            // } else {
+              console.error(e);
+            // }
+          });
+      } else {
+        console.log("did not find company id");
+      }
+      currentIndex += 1;
+      if (FETCH_COMPANIES_TEST_AMOUNT && (currentIndex) > FETCH_COMPANIES_TEST_AMOUNT)
+        break;
+    }
+
+
+    // test report progress
+    reportProgress(Math.min(100, Math.floor(pageNumber * COMPANY_SEARCH_RESULT_PAGE_SIZE * 100.0 / (resultCount * 1.0))));
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+
+  async parseCompanyResult(companyResult: ElementHandle<Element>) {
+    var company = new WkoCompany();
+    try {
+      // console.log("parseCompanyResult: companyResult: " + JSON.stringify(companyResult));
+      // <div class="row">
+      // var nameLink = await companyResult.$('a');
+      company.wkoLink = await this.getPropertyFromSelection(companyResult, 'a', 'href'); // await (await nameLink.getProperty('href')).jsonValue() as string;
+
+      // /gerhard-ecker/ober%c3%b6sterreich/?firmaid=ab745112-6b5f-4056-a226-8b79cca40478&standortid=63&standortname=steyr%20%28stadt%29%20%28bezirk%29&branche=47630&branchenname=tischler
+      company.name = await this.getPropertyFromSelection(companyResult, 'a', 'innerHTML');// await (await nameLink.getProperty('innerHTML')).jsonValue() as string;
+      company.searchResultHtml = await this.getPropertyFromSelection(companyResult, '', 'outerHTML');
+      var companyUrlSearchParams = new URLSearchParams(company.wkoLink);
+      // console.log(companyUrlSearchParams);
+      // company.id = companyUrlSearchParams..entries().get('firmaid');
+      // because this url is broken for URLSearchParams, i need to simply take the first entry
+      for (let searchParam of companyUrlSearchParams) {
+        if (searchParam[0].indexOf("firmaid") != -1)
+          company.id = searchParam[1];
+      }
+      // console.log("companyId: " + company.id);
+      company.street = await this.getPropertyFromSelection(companyResult, '.street', 'innerHTML');
+      company.zip = await this.getPropertyFromSelection(companyResult, '.zip', 'innerHTML');
+      company.locality = await this.getPropertyFromSelection(companyResult, '.locality', 'innerHTML');
+      company.phone = await this.getPropertyFromSelection(companyResult, '.icon-phone>a', 'innerHTML');
+      company.fax = await this.getPropertyFromSelection(companyResult, '.icon-fax>a', 'innerHTML');
+      company.email = await this.getPropertyFromSelection(companyResult, '.icon-email>a', 'innerHTML');
+      company.web = await this.getPropertyFromSelection(companyResult, '.icon-web>a', 'innerHTML');
+      // locations, categories...
+    } catch (e) {
+      console.error(e);
+    }
+    return company;
+  }
+
+  async getPropertyFromSelection(rootElement: ElementHandle<Element>, query: string, property: string): Promise<string> {
+    try {
+      var queryElement: ElementHandle<Element>;
+      if (query != '')
+        queryElement = await rootElement.$(query);
+      else
+        queryElement = rootElement;
+      var result = await (await queryElement.getProperty(property)).jsonValue() as string;
+      // console.log("getPropertyFromSelection: " + query + "(" + property + "): " + result);
+      return result;
+    }
+    catch (e) {
+      // console.error("getPropertyFromSelection: " + query + "(" + property + "): could not be found");
+      return "";
+    }
   }
 
   async buildCompaniesSearchUrl(loadingEntry: WkoLoadingHistory): Promise<string> {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { getTreeRepository, Repository, TreeRepository,  } from 'typeorm';
+import { getTreeRepository, Repository, TreeRepository, } from 'typeorm';
 import { TreeEntity } from './entities/treeentity.entity';
 import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoCompany } from './entities/wkocompany.entity';
@@ -62,6 +62,10 @@ export class WkoService {
       query.innerJoin('company.locations', 'location', 'location.wkoId IN (:locationIds)', { locationIds: locationLeafIds });
     // console.log(query.getQueryAndParameters());
     return query.getMany();
+  }
+
+  async saveCompany(company: WkoCompany): Promise<WkoCompany> {
+    return this.companyRepo.save(company);
   }
 
   async reduceRedundancies(trees: TreeEntity[]): Promise<TreeEntity[]> {
