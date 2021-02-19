@@ -25,7 +25,7 @@ export class IamService {
       return result;
     }
     catch (e) {
-      console.error(e);
+      Logger.warn(e);
       return ort;
     }
   }

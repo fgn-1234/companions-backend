@@ -328,7 +328,7 @@ export class WkowebsiteService {
       return 0;
     }
     catch (e) {
-      console.error(e);
+      Logger.error(e);
       return 1;
     }
   }
@@ -379,12 +379,12 @@ export class WkowebsiteService {
             // if (e instanceof QueryFailedError) {
             //   var queryFailedError = e as QueryFailedError;
             //   if (queryFailedError.message.indexOf('searchResultHtml') > -1) {
-            //     console.error("ERROR: increase size of searchResultHtml column");
+            //     Logger.error("ERROR: increase size of searchResultHtml column");
             //   } else {
-            //     console.error(e);
+            //     Logger.error(e);
             //   }
             // } else {
-            console.error(e);
+            Logger.error(e);
             // }
           });
       } else {
@@ -430,7 +430,7 @@ export class WkowebsiteService {
       company.web = await this.getPropertyFromSelection(companyResult, '.icon-web>a', 'innerHTML');
       // locations, categories...
     } catch (e) {
-      console.error(e);
+      Logger.error(e);
     }
     return company;
   }
@@ -447,7 +447,7 @@ export class WkowebsiteService {
       return result;
     }
     catch (e) {
-      // console.error("getPropertyFromSelection: " + query + "(" + property + "): could not be found");
+      // Logger.error("getPropertyFromSelection: " + query + "(" + property + "): could not be found");
       return "";
     }
   }
