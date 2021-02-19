@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getTreeRepository, Repository, TreeRepository, } from 'typeorm';
 import { TreeEntity } from './entities/treeentity.entity';
@@ -60,7 +60,7 @@ export class WkoService {
       query.innerJoin('company.categories', 'category', 'category.wkoId IN (:categoryIds)', { categoryIds: categoryLeafIds });
     if (locationLeafIds.length)
       query.innerJoin('company.locations', 'location', 'location.wkoId IN (:locationIds)', { locationIds: locationLeafIds });
-    // console.log(query.getQueryAndParameters());
+    // Logger.debug(query.getQueryAndParameters());
     return query.getMany();
   }
 
@@ -68,17 +68,17 @@ export class WkoService {
     return this.companyRepo.save(company);
   }
 
-  async addCompanyLocation(companyid: string, locationString: string) {
-    var location = this.locationRepo
+  async addCompanyLocation(companyid: string, locationString: string): Promise<void> {
+    var location = await this.locationRepo
       .createQueryBuilder("loc")
       .where("loc.name = :locString", { locString: locationString })
       .getOne();
     if (location) {
-      await this.companyRepo
+      return this.companyRepo
         .createQueryBuilder("company")
         .relation("locations")
         .of(companyid)
-        .add(location);
+        .add(location.id);
     }
   }
 
@@ -99,7 +99,7 @@ export class WkoService {
         return -1;
     });
 
-    // console.log("the sorted map: " + sorted.map(s => s.tree.wkoId + ": " + s.leafIds.length).join(", "));
+    // Logger.debug("the sorted map: " + sorted.map(s => s.tree.wkoId + ": " + s.leafIds.length).join(", "));
 
     // reduce now
     var totalLeafIds = [];
@@ -111,7 +111,7 @@ export class WkoService {
       }
     }
 
-    // console.log(distinctTrees);
+    // Logger.debug(distinctTrees);
 
     return distinctTrees;
   }
@@ -154,15 +154,15 @@ export class WkoService {
 
   async getLeafIds(ids: number[], trees: TreeEntity[]): Promise<number[]> {
     var treesAndSubtreesWithGivenIds = await this.findTrees(trees, ids);
-    // console.log("found matches: " + treesAndSubtreesWithGivenIds.map(t => t.name).join(", "));
+    // Logger.debug("found matches: " + treesAndSubtreesWithGivenIds.map(t => t.name).join(", "));
     var missingIds: number[] = ids.filter(id => treesAndSubtreesWithGivenIds.findIndex(e => e.wkoId == id) == -1);
     if (missingIds.length) {
-      console.log("Did not find entities for ids: " + missingIds.join());
+      Logger.debug("Did not find entities for ids: " + missingIds.join());
     }
     var leaves = await this.getTreeLeaves(treesAndSubtreesWithGivenIds);
     var leavesIds = leaves.map(l => l.wkoId);
     var distinctLeafIds = Array.from(new Set(leavesIds));
-    // console.log("locationids " + ids + " resolved to " + distinctLeafIds);
+    // Logger.debug("locationids " + ids + " resolved to " + distinctLeafIds);
     return distinctLeafIds;
   }
 
@@ -219,7 +219,7 @@ export class WkoService {
   // }
 
   // async saveLoadingHistoryEntries(loadingHistoryEntries: WkoLoadingHistory[]): Promise<WkoLoadingHistory[]> {
-  //   console.log(loadingHistoryEntries);
+  //   Logger.debug(loadingHistoryEntries);
   //   return this.loadingHistoryRepo.save(loadingHistoryEntries);
   // }
 }

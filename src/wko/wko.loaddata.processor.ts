@@ -1,4 +1,5 @@
 import { OnQueueProgress, Process, Processor } from "@nestjs/bull";
+import { Logger } from "@nestjs/common";
 import { Job } from "bull";
 import { WkoLoadingHistory } from "./entities/wkoloadinghistory.entity";
 import { WkowebsiteService } from "./wkowebsite.service";
@@ -9,14 +10,14 @@ export class WkoLoadDataProcessor {
 
   @Process()
   async processLoadCompaniesJob(job: Job<WkoLoadingHistory>) {
-    console.log("Start loading companies: " + JSON.stringify(job.data));
+    Logger.debug("Start loading companies: " + JSON.stringify(job.data));
     var result = await this.website.fetchCompaniesTask(job.data, (progress) => this.reportProgressFromOutside(job, progress));
     return result;
   }
 
   @OnQueueProgress()
   onProgress(job: Job, progress: number) {
-    console.log("Job " + job.id + " progressed to " + progress + "%");
+    Logger.debug("Job " + job.id + " progressed to " + progress + "%");
   }
 
   async reportProgressFromOutside(job: Job, progress: number) {

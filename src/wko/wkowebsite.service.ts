@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { WkoService } from './wko.service';
 import { WkoCategory } from './entities/wkocategory.entity';
 import { WkoLocation } from './entities/wkolocation.entity';
@@ -34,12 +34,12 @@ const BLOCKED_RESOURCES = [
 
 const COMPANY_SEARCH_RESULT_PAGE_SIZE = 10;
 
-const FETCH_COMPANIES_TEST_AMOUNT = 0;
+const FETCH_COMPANIES_TEST_AMOUNT = 2;
 
 @Injectable()
 export class WkowebsiteService {
   constructor(private wko: WkoService,
-    @InjectQueue('loadCompanyData') private audioQueue: Queue, 
+    @InjectQueue('loadCompanyData') private audioQueue: Queue,
     private iamService: IamService) { }
 
   async getNewBrowserPage(headless: boolean, url: string, blockTraceResources: boolean) {
@@ -98,24 +98,24 @@ export class WkowebsiteService {
         if (clicklink != null) {
           // dann werte vom letzten checken und dann clicken und hinzufügen und added = true
           var result = await this.getIdAndTitle(tds);
-          // console.log(result);
+          // Logger.debug(result);
           if (categories.indexOf(result) == -1) {
             await clicklink.click();
             await new Promise(resolve => setTimeout(resolve, 1000));
             categories.push(result);
             const clicklinkhref = await (await clicklink.getProperty('href')).jsonValue() as string;
-            // console.log(clicklinkhref);
+            // Logger.debug(clicklinkhref);
             expanded = true;
           }
           else {
-            console.log("category already in list: " + result);
+            Logger.debug("category already in list: " + result);
             // return false;
           }
           // }
         }
         else {
           var result = await this.getIdAndTitle(tds);
-          console.log("clicklink was null " + result); // so it is the leafcategory
+          Logger.debug("clicklink was null " + result); // so it is the leafcategory
 
           categories.push(result);
           // return false;
@@ -141,7 +141,7 @@ export class WkowebsiteService {
     const hrefParts = href.split(",");
     const id = hrefParts[1];
     // const linkindex = hrefParts[1];
-    // console.log(linkindex);
+    // Logger.debug(linkindex);
     // if (hrefParts.length < 7) {
     //     // some kind of emtpy parent category?
     // }
@@ -153,33 +153,33 @@ export class WkowebsiteService {
   async saveCategories(categories: string[]) {
     var savedCategories: WkoCategory[] = [];
     for (let c of categories) {
-      // console.log("new iteration");
+      // Logger.debug("new iteration");
       var catparts = c.split("#");
       var catName = catparts[0];
       var catIdParts = catparts[1].split("\\");
       var catId = catIdParts[catIdParts.length - 1];
       var category = new WkoCategory();
-      // console.log("before: " + this.cleanWkoId(catId));
+      // Logger.debug("before: " + this.cleanWkoId(catId));
       category.wkoId = +this.cleanWkoId(catId);
-      // console.log("klo id: " + category.wkoId);
+      // Logger.debug("klo id: " + category.wkoId);
       category.name = catName;
       if (catIdParts.length > 1) {
-        console.log("catidparts: " + catIdParts);
+        Logger.debug("catidparts: " + catIdParts);
         var parentCatId = +this.cleanWkoId(catIdParts[catIdParts.length - 3]);
-        console.log("parentcatid: " + parentCatId);
+        Logger.debug("parentcatid: " + parentCatId);
         var parentCategory = await this.wko.findOneCategory(parentCatId);
         category.parent = parentCategory;
       }
       await this.wko.addCategory(category)
         .then((savedCat) => {
           savedCategories.push(savedCat);
-          // console.log("saved");
+          // Logger.debug("saved");
         }).catch((e) => {
-          console.log(e);
+          Logger.debug(e);
         });
     }
-    // console.log(savedCategories);
-    // console.log(savedCategories.length);
+    // Logger.debug(savedCategories);
+    // Logger.debug(savedCategories.length);
     return savedCategories;
   }
 
@@ -192,7 +192,7 @@ export class WkowebsiteService {
   }
 
   async fetchLocationsTask(testAmount: number) {
-    console.log(testAmount);
+    Logger.debug(testAmount);
     const browser = await puppeteer.launch({
       headless: false,
       // slowMo: 30 // slow down by 250ms
@@ -221,24 +221,24 @@ export class WkowebsiteService {
         if (clicklink != null) {
           // dann werte vom letzten checken und dann clicken und hinzufügen und added = true
           var result = await this.getIdAndTitle(tds);
-          console.log(result);
+          Logger.debug(result);
           if (locations.indexOf(result) == -1) {
             await clicklink.click();
             await new Promise(resolve => setTimeout(resolve, 1000));
             locations.push(result);
             const clicklinkhref = await (await clicklink.getProperty('href')).jsonValue() as string;
-            // console.log(clicklinkhref);
+            // Logger.debug(clicklinkhref);
             expanded = true;
           }
           else {
-            console.log("location already in list: " + result);
+            Logger.debug("location already in list: " + result);
             // return false;
           }
           // }
         }
         else {
           var result = await this.getIdAndTitle(tds);
-          console.log("clicklink was null " + result); // so it is the leaflocation
+          Logger.debug("clicklink was null " + result); // so it is the leaflocation
 
           locations.push(result);
           // return false;
@@ -256,33 +256,33 @@ export class WkowebsiteService {
   async saveLocations(locations: string[]) {
     var savedLocations: WkoLocation[] = [];
     for (let l of locations) {
-      // console.log("new iteration");
+      // Logger.debug("new iteration");
       var locParts = l.split("#");
       var locName = locParts[0];
       var locIdParts = locParts[1].split("\\");
       var locId = locIdParts[locIdParts.length - 1];
       var location = new WkoLocation();
-      // console.log("before: " + this.cleanWkoId(catId));
+      // Logger.debug("before: " + this.cleanWkoId(catId));
       location.wkoId = +this.cleanWkoId(locId);
-      // console.log("klo id: " + category.wkoId);
+      // Logger.debug("klo id: " + category.wkoId);
       location.name = locName;
       if (locIdParts.length > 1) {
-        console.log("locidparts: " + locIdParts);
+        Logger.debug("locidparts: " + locIdParts);
         var parentLocId = +this.cleanWkoId(locIdParts[locIdParts.length - 3]);
-        console.log("parentlocid: " + parentLocId);
+        Logger.debug("parentlocid: " + parentLocId);
         var parentLocation = await this.wko.findOneLocation(parentLocId);
         location.parent = parentLocation;
       }
       await this.wko.addLocation(location)
         .then((saved) => {
           savedLocations.push(saved);
-          // console.log("saved");
+          // Logger.debug("saved");
         }).catch((e) => {
-          console.log(e);
+          Logger.debug(e);
         });
     }
-    // console.log(savedLocations);
-    // console.log(savedLocations.length);
+    // Logger.debug(savedLocations);
+    // Logger.debug(savedLocations.length);
     return savedLocations;
   }
 
@@ -309,12 +309,12 @@ export class WkowebsiteService {
   async fetchCompaniesTask(loadingEntry: WkoLoadingHistory, reportProgress: (progress: number) => void): Promise<number> {
     try {
       var url = await this.buildCompaniesSearchUrl(loadingEntry);
-      console.log(url);
+      Logger.debug(url);
       var page = await this.getNewBrowserPage(false, url, true);
       var resultCount = await this.getCompaniesResultCount(page);
       if (resultCount < 1000) {
         // paginate through the results: ...
-        console.log("got " + resultCount + " results");
+        Logger.debug("got " + resultCount + " results");
         await this.fetchCompaniesFromSearch(page, resultCount, reportProgress);
       } else {
         // TODO: split job to multiple subjobs
@@ -363,15 +363,17 @@ export class WkowebsiteService {
         var locationString = await this.iamService.getGemeindeFromOrtAndPLZ(company.locality, company.zip);
         this.wko.saveCompany(company)
           .then(c => {
-            if(c.createdAt)
-            {
-              console.log("entity createdat is set");
+            if (c.createdAt) {
+              Logger.debug("entity createdat is set");
 
             }
             else {
-              console.log("entity was nmot fetched from db");
+              Logger.debug("entity was nmot fetched from db");
             }
-            this.wko.addCompanyLocation(company.id, locationString);
+            this.wko.addCompanyLocation(company.id, locationString)
+              .catch(e => {
+                Logger.warn(e);
+              });
           })
           .catch(e => {
             // if (e instanceof QueryFailedError) {
@@ -382,11 +384,11 @@ export class WkowebsiteService {
             //     console.error(e);
             //   }
             // } else {
-              console.error(e);
+            console.error(e);
             // }
           });
       } else {
-        console.log("did not find company id");
+        Logger.debug("did not find company id");
       }
       currentIndex += 1;
       if (FETCH_COMPANIES_TEST_AMOUNT && (currentIndex) > FETCH_COMPANIES_TEST_AMOUNT)
@@ -402,7 +404,7 @@ export class WkowebsiteService {
   async parseCompanyResult(companyResult: ElementHandle<Element>) {
     var company = new WkoCompany();
     try {
-      // console.log("parseCompanyResult: companyResult: " + JSON.stringify(companyResult));
+      // Logger.debug("parseCompanyResult: companyResult: " + JSON.stringify(companyResult));
       // <div class="row">
       // var nameLink = await companyResult.$('a');
       company.wkoLink = await this.getPropertyFromSelection(companyResult, 'a', 'href'); // await (await nameLink.getProperty('href')).jsonValue() as string;
@@ -411,14 +413,14 @@ export class WkowebsiteService {
       company.name = await this.getPropertyFromSelection(companyResult, 'a', 'innerHTML');// await (await nameLink.getProperty('innerHTML')).jsonValue() as string;
       company.searchResultHtml = await this.getPropertyFromSelection(companyResult, '', 'outerHTML');
       var companyUrlSearchParams = new URLSearchParams(company.wkoLink);
-      // console.log(companyUrlSearchParams);
+      // Logger.debug(companyUrlSearchParams);
       // company.id = companyUrlSearchParams..entries().get('firmaid');
       // because this url is broken for URLSearchParams, i need to simply take the first entry
       for (let searchParam of companyUrlSearchParams) {
         if (searchParam[0].indexOf("firmaid") != -1)
           company.id = searchParam[1];
       }
-      // console.log("companyId: " + company.id);
+      // Logger.debug("companyId: " + company.id);
       company.street = await this.getPropertyFromSelection(companyResult, '.street', 'innerHTML');
       company.zip = await this.getPropertyFromSelection(companyResult, '.zip', 'innerHTML');
       company.locality = await this.getPropertyFromSelection(companyResult, '.locality', 'innerHTML');
@@ -441,7 +443,7 @@ export class WkowebsiteService {
       else
         queryElement = rootElement;
       var result = await (await queryElement.getProperty(property)).jsonValue() as string;
-      // console.log("getPropertyFromSelection: " + query + "(" + property + "): " + result);
+      // Logger.debug("getPropertyFromSelection: " + query + "(" + property + "): " + result);
       return result;
     }
     catch (e) {

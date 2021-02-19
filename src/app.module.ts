@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WkoLocation } from './wko/entities/wkolocation.entity';
 import { TreeEntity } from './wko/entities/treeentity.entity';
 import { BullModule } from '@nestjs/bull';
+import { IamModule } from './iam/iam.module';
 import { IamService } from './iam/iam.service';
 
 @Module({
@@ -28,9 +29,9 @@ import { IamService } from './iam/iam.service';
         port: 6379,
       },
     }),
-    WkoModule, HttpModule
+    WkoModule, HttpModule, IamModule
   ],
   controllers: [AppController],
   providers: [AppService, IamService],
 })
-export class AppModule {}
+export class AppModule { }

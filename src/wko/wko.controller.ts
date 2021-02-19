@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query } from '@nestjs/common';
 import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
 import { TreeEntity } from './entities/treeentity.entity';
@@ -43,11 +43,11 @@ export class WkoController {
         var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
         var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
 
-        console.log("Get companies for locations: " + locations + " and cats: " + categories);
+        Logger.debug("Get companies for locations: " + locations + " and cats: " + categories);
         locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
         categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
 
-        // console.log("Get companies for reduced locations: " + locations + " and reduced cats: " + categories);
+        // Logger.debug("Get companies for reduced locations: " + locations + " and reduced cats: " + categories);
         var result: WkoCompanyResponse = { companies: null, loadingHistory: null };
         result.companies = await this.wko.getCompanies(locations, categories);
         // result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
@@ -59,7 +59,7 @@ export class WkoController {
         var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
         var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
 
-        console.log("fetch companies for locations: " + locations + " and cats: " + categories);
+        Logger.debug("fetch companies for locations: " + locations + " and cats: " + categories);
         locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
         categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
 
