@@ -68,6 +68,20 @@ export class WkoService {
     return this.companyRepo.save(company);
   }
 
+  async addCompanyLocation(companyid: string, locationString: string) {
+    var location = this.locationRepo
+      .createQueryBuilder("loc")
+      .where("loc.name = :locString", { locString: locationString })
+      .getOne();
+    if (location) {
+      await this.companyRepo
+        .createQueryBuilder("company")
+        .relation("locations")
+        .of(companyid)
+        .add(location);
+    }
+  }
+
   async reduceRedundancies(trees: TreeEntity[]): Promise<TreeEntity[]> {
     var treesWithLeafIds: TreeWithAllDescendantIds[] = [];
     for (let i = 0; i < trees.length; i++) {
