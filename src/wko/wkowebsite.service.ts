@@ -8,6 +8,7 @@ import { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 import { WkoCompany } from './entities/wkocompany.entity';
 import { QueryFailedError } from 'typeorm';
+import { IamService } from 'src/iam/iam.service';
 const puppeteer = require('puppeteer');
 
 const BLOCKED_RESOURCES = [
@@ -38,7 +39,8 @@ const FETCH_COMPANIES_TEST_AMOUNT = 0;
 @Injectable()
 export class WkowebsiteService {
   constructor(private wko: WkoService,
-    @InjectQueue('loadCompanyData') private audioQueue: Queue) { }
+    @InjectQueue('loadCompanyData') private audioQueue: Queue, 
+    private iamService: IamService) { }
 
   async getNewBrowserPage(headless: boolean, url: string, blockTraceResources: boolean) {
     const browser = await puppeteer.launch({
@@ -357,8 +359,20 @@ export class WkowebsiteService {
     for (let companyResult of companyResults) {
       var company = await this.parseCompanyResult(companyResult);
       if (company.id) {
+        // try to link location
+        var locationString = await this.iamService.getGemeindeFromOrtAndPLZ(company.locality, company.zip);
         this.wko.saveCompany(company)
-          // .then(c => console.log("successfully saved " + c.name))
+          .then(c => {
+            if(c.createdAt)
+            {
+              console.log("entity createdat is set");
+
+            }
+            else {
+              console.log("entity was nmot fetched from db");
+            }
+            this.wko.addCompanyLocation(company.id, locationString);
+          })
           .catch(e => {
             // if (e instanceof QueryFailedError) {
             //   var queryFailedError = e as QueryFailedError;
