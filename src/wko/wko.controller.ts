@@ -3,6 +3,8 @@ import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
 import { TreeEntity } from './entities/treeentity.entity';
 import { WkowebsiteService } from './wkowebsite.service';
+import { from, pipe } from 'rxjs';
+import { map, filter, distinct } from 'rxjs/operators';
 
 interface WkoCompanyResponse {
     loadingHistory: string[];
@@ -40,12 +42,16 @@ export class WkoController {
 
     @Get('companies')
     async companies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<WkoCompanyResponse> {
-        var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
-        var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
+        // var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
+        // var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
 
+        // Logger.debug("Get companies for locations: " + locations + " and cats: " + categories);
+        // locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
+        // categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
+
+        var locations = await this.parseLocationWkoIdsFromParam(locationsString);
+        var categories = await this.parseCategoryWkoIdsFromParam(categoriesString);
         Logger.debug("Get companies for locations: " + locations + " and cats: " + categories);
-        locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
-        categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
 
         // Logger.debug("Get companies for reduced locations: " + locations + " and reduced cats: " + categories);
         var result: WkoCompanyResponse = { companies: null, loadingHistory: null };
@@ -54,15 +60,29 @@ export class WkoController {
         return result;
     }
 
+    private async parseLocationWkoIdsFromParam(companyQueryParam: string): Promise<number[]> {
+        var wkoIds: number[] = companyQueryParam ? companyQueryParam.split(",").map(ls => +(ls.trim())) : [];
+        return from(this.wko.getReducedLocationTrees(wkoIds)).pipe(map(trees => trees.map(tree => tree.wkoId))).toPromise();
+    }
+
+    private async parseCategoryWkoIdsFromParam(companyQueryParam: string): Promise<number[]> {
+        var wkoIds: number[] = companyQueryParam ? companyQueryParam.split(",").map(ls => +(ls.trim())) : [];
+        return from(this.wko.getReducedLocationTrees(wkoIds)).pipe(map(trees => trees.map(tree => tree.wkoId))).toPromise();
+    }
+
     @Post('fetchCompanies')
     async fetchCompanies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<boolean> {
-        var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
-        var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
+        // var locations: number[] = locationsString ? locationsString.split(",").map(ls => +(ls.trim())) : [];
+        // var categories: number[] = categoriesString ? categoriesString.split(",").map(cs => +(cs.trim())) : [];
 
+        // Logger.debug("fetch companies for locations: " + locations + " and cats: " + categories);
+        // locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
+        // categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
+
+        var locations = await this.parseLocationWkoIdsFromParam(locationsString);
+        var categories = await this.parseCategoryWkoIdsFromParam(categoriesString);
         Logger.debug("fetch companies for locations: " + locations + " and cats: " + categories);
-        locations = (await this.wko.getReducedLocationTrees(locations)).map(t => t.wkoId);
-        categories = (await this.wko.getReducedCategoryTrees(categories)).map(t => t.wkoId);
-
+        
         this.wkoWebsite.addFetchCompaniesJobs(locations, categories);
 
         return true;
