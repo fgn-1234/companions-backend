@@ -315,7 +315,7 @@ export class WkowebsiteService {
       if (resultCount < 1000) {
         // paginate through the results: ...
         Logger.debug("got " + resultCount + " results");
-        await this.fetchCompaniesFromSearch(page, resultCount, reportProgress);
+        await this.fetchCompaniesFromSearch(page, resultCount, reportProgress, loadingEntry);
       } else {
         // TODO: split job to multiple subjobs
         throw new Error("not yet implemented: too many company results");
@@ -333,7 +333,7 @@ export class WkowebsiteService {
     }
   }
 
-  async fetchCompaniesFromSearch(page: Page, resultCount: number, reportProgress: (progress: number) => void) {
+  async fetchCompaniesFromSearch(page: Page, resultCount: number, reportProgress: (progress: number) => void, loadingEntry: WkoLoadingHistory) {
     var url = page.url();
     var pagesCount = Math.ceil(resultCount * 1.0 / COMPANY_SEARCH_RESULT_PAGE_SIZE);
     for (let pageNumber = 1; pageNumber <= pagesCount; pageNumber++) {
@@ -341,13 +341,13 @@ export class WkowebsiteService {
       if (pageNumber > 1)
         urlWithPage += "&page=" + pageNumber;
       await page.goto(urlWithPage);
-      await this.fetchCompaniesFromSearchPaginated(page, resultCount, pageNumber, reportProgress);
+      await this.fetchCompaniesFromSearchPaginated(page, resultCount, pageNumber, reportProgress, loadingEntry);
       if (FETCH_COMPANIES_TEST_AMOUNT && (pageNumber * COMPANY_SEARCH_RESULT_PAGE_SIZE) > FETCH_COMPANIES_TEST_AMOUNT)
         break;
     }
   }
 
-  async fetchCompaniesFromSearchPaginated(page: Page, resultCount: number, pageNumber: number, reportProgress: (progress: number) => void) {
+  async fetchCompaniesFromSearchPaginated(page: Page, resultCount: number, pageNumber: number, reportProgress: (progress: number) => void, loadingEntry: WkoLoadingHistory) {
     var pageSize = COMPANY_SEARCH_RESULT_PAGE_SIZE;
     var alreadyHandledAmount = (pageNumber - 1) * pageSize;
     var currentPageSize = Math.min(resultCount - alreadyHandledAmount, pageSize);
@@ -363,17 +363,11 @@ export class WkowebsiteService {
         var locationString = await this.iamService.getGemeindeFromOrtAndPLZ(company.locality, company.zip);
         this.wko.saveCompany(company)
           .then(c => {
-            if (c.createdAt) {
-              Logger.debug("entity createdat is set");
-
-            }
-            else {
-              Logger.debug("entity was nmot fetched from db");
-            }
             this.wko.addCompanyLocation(company.id, locationString)
               .catch(e => {
                 Logger.warn(e);
               });
+              this.wko.addCompanyCategory(company.id, loadingEntry.categoryId);
           })
           .catch(e => {
             // if (e instanceof QueryFailedError) {

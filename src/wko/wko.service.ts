@@ -51,8 +51,8 @@ export class WkoService {
   }
 
   async getCompanies(locationIds: number[], categoryIds: number[]): Promise<WkoCompany[]> {
-    var locationLeafIds = await this.getLocationLeafIds(locationIds);
-    var categoryLeafIds = await this.getCategoryLeafIds(categoryIds);
+    var locationLeafIds = await this.getLocationNodeIds(locationIds);
+    var categoryLeafIds = await this.getCategoryNodeIds(categoryIds);
 
     var query = this.companyRepo
       .createQueryBuilder("company");
@@ -82,10 +82,18 @@ export class WkoService {
     }
   }
 
+  async addCompanyCategory(companyid: string, categoryId: number): Promise<void> {
+    return this.companyRepo
+      .createQueryBuilder("company")
+      .relation("categories")
+      .of(companyid)
+      .add(categoryId);
+  }
+
   async reduceRedundancies(trees: TreeEntity[]): Promise<TreeEntity[]> {
     var treesWithLeafIds: TreeWithAllDescendantIds[] = [];
     for (let i = 0; i < trees.length; i++) {
-      treesWithLeafIds.push({ tree: trees[i], leafIds: await this.getLeafIds([trees[i].wkoId], [trees[i]]) });
+      treesWithLeafIds.push({ tree: trees[i], leafIds: await this.getTreeNodeIds([trees[i].wkoId], [trees[i]]) });
     }
 
     var sorted = treesWithLeafIds.sort((a, b) => {
@@ -142,24 +150,24 @@ export class WkoService {
     return trees;
   }
 
-  async getLocationLeafIds(ids: number[]): Promise<number[]> {
+  async getLocationNodeIds(ids: number[]): Promise<number[]> {
     var trees = await this.getLocationTrees();
-    return this.getLeafIds(ids, trees);
+    return this.getTreeNodeIds(ids, trees);
   }
 
-  async getCategoryLeafIds(ids: number[]): Promise<number[]> {
+  async getCategoryNodeIds(ids: number[]): Promise<number[]> {
     var trees = await this.getCategoryTrees();
-    return this.getLeafIds(ids, trees);
+    return this.getTreeNodeIds(ids, trees);
   }
 
-  async getLeafIds(ids: number[], trees: TreeEntity[]): Promise<number[]> {
+  async getTreeNodeIds(ids: number[], trees: TreeEntity[]): Promise<number[]> {
     var treesAndSubtreesWithGivenIds = await this.findTrees(trees, ids);
     // Logger.debug("found matches: " + treesAndSubtreesWithGivenIds.map(t => t.name).join(", "));
     var missingIds: number[] = ids.filter(id => treesAndSubtreesWithGivenIds.findIndex(e => e.wkoId == id) == -1);
     if (missingIds.length) {
       Logger.debug("Did not find entities for ids: " + missingIds.join());
     }
-    var leaves = await this.getTreeLeaves(treesAndSubtreesWithGivenIds);
+    var leaves = await this.getTreeNodes(treesAndSubtreesWithGivenIds);
     var leavesIds = leaves.map(l => l.wkoId);
     var distinctLeafIds = Array.from(new Set(leavesIds));
     // Logger.debug("locationids " + ids + " resolved to " + distinctLeafIds);
@@ -177,21 +185,21 @@ export class WkoService {
     return matches;
   }
 
-  async getTreeLeaves(locations: TreeEntity[]): Promise<TreeEntity[]> {
-    var currentLevelLeaves = locations.filter(l => l.children.length == 0);
-    var childLocationsArray = locations
+  async getTreeNodes(parentNodes: TreeEntity[]): Promise<TreeEntity[]> {
+    var currentLevelLeaves = parentNodes.filter(l => l.children.length == 0);
+    var childrenListList = parentNodes
       .filter(l => currentLevelLeaves.indexOf(l) == -1)
       .map(l => l.children);
 
     // hat mit reduce iwie nicht funktioniert. reduce with unknown empty start value...
-    var childLocations: TreeEntity[] = [];
-    for (let i = 0; i < childLocationsArray.length; i++) {
-      childLocations = childLocations.concat(childLocationsArray[i]);
+    var children: TreeEntity[] = [];
+    for (let i = 0; i < childrenListList.length; i++) {
+      children = children.concat(childrenListList[i]);
     }
 
-    var result = currentLevelLeaves;
-    if (childLocations.length) {
-      result = result.concat(await this.getTreeLeaves(childLocations));
+    var result = parentNodes; // new version since 2021.02.22 to include intermediate nodes too. previous: currentLevelLeaves;
+    if (children.length) {
+      result = result.concat(await this.getTreeNodes(children));
     }
     return result;
   }
