@@ -60,7 +60,7 @@ export class WkoController {
 
     private async parseCategoryWkoIdsFromParam(companyQueryParam: string): Promise<number[]> {
         var wkoIds: number[] = companyQueryParam ? companyQueryParam.split(",").map(ls => +(ls.trim())) : [];
-        return from(this.wko.getReducedLocationTrees(wkoIds)).pipe(map(trees => trees.map(tree => tree.wkoId))).toPromise();
+        return from(this.wko.getReducedCategoryTrees(wkoIds)).pipe(map(trees => trees.map(tree => tree.wkoId))).toPromise();
     }
 
     @Post('fetchCompanies')
@@ -75,7 +75,17 @@ export class WkoController {
 
     @Get('companiesAmount')
     async getCompaniesAmount(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<number> {
-        return 0;
+        var locations = await this.parseLocationWkoIdsFromParam(locationsString);
+        var categories = await this.parseCategoryWkoIdsFromParam(categoriesString);
+        if (locations.length > 1 || categories.length > 1)
+            throw new Error("Cannot fetch result count for multiple combinations at once");
+
+        var location = locations.length > 0 ? locations[0]: undefined;
+        var category = categories.length > 0 ? categories[0]: undefined;
+        Logger.debug("get companies amount for location: " + location + " and cat: " + category);
+
+
+        return this.wkoWebsite.fetchCompaniesResultCountTask(location, category);
     }
 
     @Get('interactions')

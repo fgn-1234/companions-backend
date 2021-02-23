@@ -303,6 +303,24 @@ export class WkowebsiteService {
     });
   }
 
+  async fetchCompaniesResultCountTask(location: number, category: number): Promise<number> {
+    try {
+      var loadingEntry = new WkoLoadingHistory();
+      loadingEntry.locationId = location;
+      loadingEntry.categoryId = category;
+      var url = await this.buildCompaniesSearchUrl(loadingEntry);
+      Logger.debug(url);
+      var page = await this.getNewBrowserPage(false, url, true);
+      var result = await this.getCompaniesResultCount(page);
+      await page.browser().close();
+      return result;
+    }
+    catch (e) {
+      Logger.error(e);
+      return -1;
+    }
+  }
+
   /*
   result: number of companies found. if it exceeds 1000 caller must split job to subjobs
   **/
@@ -367,7 +385,7 @@ export class WkowebsiteService {
               .catch(e => {
                 Logger.warn(e);
               });
-              this.wko.addCompanyCategory(company.id, loadingEntry.categoryId);
+            this.wko.addCompanyCategory(company.id, loadingEntry.categoryId);
           })
           .catch(e => {
             // if (e instanceof QueryFailedError) {
@@ -485,7 +503,7 @@ export class WkowebsiteService {
 
   async getCompaniesResultCount(page: Page): Promise<number> {
     var resultsString = await (await (await page.$('header h1 a')).getProperty('innerText')).jsonValue() as string;
-    var results = +(resultsString.replace("Treffer", "").trim());
+    var results = +(resultsString.replace("Treffer", "").replace("über", "").trim());
     return results;
   }
 }
