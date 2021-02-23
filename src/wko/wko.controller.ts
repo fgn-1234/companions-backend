@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Logger, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query, Headers } from '@nestjs/common';
 import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
 import { TreeEntity } from './entities/treeentity.entity';
 import { WkowebsiteService } from './wkowebsite.service';
 import { from, pipe } from 'rxjs';
 import { map, filter, distinct } from 'rxjs/operators';
+import { WkoCompanyInteraction } from './entities/wkocompanyinteraction.entity';
 
 interface WkoCompanyResponse {
     loadingHistory: string[];
@@ -13,7 +14,7 @@ interface WkoCompanyResponse {
 
 @Controller('wko')
 export class WkoController {
-    constructor(private wko: WkoService, 
+    constructor(private wko: WkoService,
         private wkoWebsite: WkowebsiteService) { }
 
     @Get('categories')
@@ -82,9 +83,21 @@ export class WkoController {
         var locations = await this.parseLocationWkoIdsFromParam(locationsString);
         var categories = await this.parseCategoryWkoIdsFromParam(categoriesString);
         Logger.debug("fetch companies for locations: " + locations + " and cats: " + categories);
-        
+
         this.wkoWebsite.addFetchCompaniesJobs(locations, categories);
 
         return true;
+    }
+
+    @Get('interactions')
+    async getInteractions(@Query('companyId') companyId: string): Promise<WkoCompanyInteraction[]> {
+        return this.wko.getCompanyInteractions(companyId);
+    }
+
+    @Post('addInteraction')
+    async addInteraction(@Body() interaction: any, @Headers() headers: Headers): Promise<void> {
+        console.log(JSON.stringify(headers));
+        console.log(JSON.stringify(interaction));
+        this.wko.saveInteraction(interaction);
     }
 }

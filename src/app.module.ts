@@ -10,6 +10,7 @@ import { TreeEntity } from './wko/entities/treeentity.entity';
 import { BullModule } from '@nestjs/bull';
 import { IamModule } from './iam/iam.module';
 import { IamService } from './iam/iam.service';
+import { WkoCompanyInteraction } from './wko/entities/wkocompanyinteraction.entity';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { IamService } from './iam/iam.service';
       username: 'root',
       password: 'abc',
       database: 'wko',
-      entities: [WkoCategory, WkoCompany, WkoLocation, TreeEntity],
+      entities: [WkoCategory, WkoCompany, WkoLocation, TreeEntity, WkoCompanyInteraction],
       synchronize: true,
     }),
     BullModule.forRoot({

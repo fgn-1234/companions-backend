@@ -7,6 +7,7 @@ import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoLocation } from './entities/wkolocation.entity';
 import { from, pipe } from 'rxjs';
 import { map, filter, distinct } from 'rxjs/operators';
+import { WkoCompanyInteraction } from './entities/wkocompanyinteraction.entity';
 
 interface TreeWithAllDescendantIds {
   tree: TreeEntity;
@@ -20,6 +21,7 @@ export class WkoService {
     @InjectRepository(WkoLocation) private locationRepo: Repository<WkoLocation>,
     @InjectRepository(TreeEntity) private treeEntityRepo: TreeRepository<TreeEntity>,
     @InjectRepository(WkoCompany) private companyRepo: Repository<WkoCompany>,
+    @InjectRepository(WkoCompanyInteraction) private interactionRepo: Repository<WkoCompanyInteraction>
     // @InjectRepository(WkoLoadingHistory) private loadingHistoryRepo: Repository<WkoLoadingHistory>
   ) { }
 
@@ -64,6 +66,13 @@ export class WkoService {
     return query.getMany();
   }
 
+  async getCompanyInteractions(companyId: string): Promise<WkoCompanyInteraction[]> {
+    return this.interactionRepo
+      .createQueryBuilder("interaction")
+      .where("interaction.companyId = :companyId", { companyId: companyId })
+      .getMany();
+  }
+
   async saveCompany(company: WkoCompany): Promise<WkoCompany> {
     return this.companyRepo.save(company);
   }
@@ -88,6 +97,13 @@ export class WkoService {
       .relation("categories")
       .of(companyid)
       .add(categoryId);
+  }
+
+  async saveInteraction(interaction: WkoCompanyInteraction): Promise<void> {
+    interaction.id = undefined;
+    interaction.createdAt = undefined;
+    Logger.debug("interaction: " + JSON.stringify(interaction));
+    this.interactionRepo.save(interaction);
   }
 
   async reduceRedundancies(trees: TreeEntity[]): Promise<TreeEntity[]> {

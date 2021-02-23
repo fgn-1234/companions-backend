@@ -11,6 +11,7 @@ import { BullModule } from '@nestjs/bull';
 import { WkoLoadDataProcessor } from './wko.loaddata.processor';
 import { IamModule } from 'src/iam/iam.module';
 import { IamService } from 'src/iam/iam.service';
+import { WkoCompanyInteraction } from './entities/wkocompanyinteraction.entity';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { IamService } from 'src/iam/iam.service';
       WkoCategory,
       WkoCompany,
       WkoLocation,
-      TreeEntity
+      TreeEntity, 
+      WkoCompanyInteraction
     ]),
     BullModule.registerQueue({
       name: 'loadCompanyData',
