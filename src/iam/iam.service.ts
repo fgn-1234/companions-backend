@@ -6,10 +6,17 @@ const cheerio = require('cheerio');
 export class IamService {
   constructor(private http: HttpService) { }
 
+  // seite 21 ca
+  cache: { [id: string]: string; } = {};
+
+
   async getGemeindeFromOrtAndPLZ(ort: string, plz: string): Promise<string> {
     try {
       Logger.debug("ort: " + ort);
       Logger.debug("plz: " + plz);
+      var cacheIdString = ort + plz;
+      if (this.cache[cacheIdString])
+        return this.cache[cacheIdString];
       var reqBody = "Eingabe=" + plz + "&Was=Plz&B1=Suchen";
       var page = (await this.http.post<string>('http://iam.at/austria/read.asp', reqBody).toPromise()).data;
 
@@ -22,10 +29,12 @@ export class IamService {
       var matchingRow = valueRows.find(s => s.startsWith(plz + " - " + ort));
       Logger.debug("matchingRow: " + matchingRow);
       var result = matchingRow.split(" - ")[2];
+      this.cache[cacheIdString] = result;
       return result;
     }
     catch (e) {
       Logger.warn(e);
+      this.cache[cacheIdString] = ort;
       return ort;
     }
   }

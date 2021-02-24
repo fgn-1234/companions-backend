@@ -1,0 +1,90 @@
+// vorderwinkler barrierefreies hören link too long
+
+[Nest] 17288   - 02/24/2021, 3:42:35 PM   Object:
+{
+  "message": "ER_DUP_ENTRY: Duplicate entry '777-998f2880-8529-4a93-9e30-24e8d8114f78' for key 'PRIMARY'",
+  "code": "ER_DUP_ENTRY",
+  "errno": 1062,
+  "sqlMessage": "Duplicate entry '777-998f2880-8529-4a93-9e30-24e8d8114f78' for key 'PRIMARY'",
+  "sqlState": "23000",
+  "index": 0,
+  "sql": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES ('998f2880-8529-4a93-9e30-24e8d8114f78', 777)",
+  "name": "QueryFailedError",
+  "query": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES (?, ?)",
+  "parameters": [
+    "998f2880-8529-4a93-9e30-24e8d8114f78",
+    777
+  ]
+}
+
+[Nest] 17288   - 02/24/2021, 3:42:40 PM   Object:
+{
+  "message": "ER_NO_REFERENCED_ROW_2: Cannot add or update a child row: a foreign key constraint fails (`wko`.`wko_company_locations_tree_entity`, CONSTRAINT `FK_8d9023e23a009c047c875f4f0a2` FOREIGN KEY (`wkoCompanyId`) REFERENCES `wko_company` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION)",
+  "code": "ER_NO_REFERENCED_ROW_2",
+  "errno": 1452,
+  "sqlMessage": "Cannot add or update a child row: a foreign key constraint fails (`wko`.`wko_company_locations_tree_entity`, CONSTRAINT `FK_8d9023e23a009c047c875f4f0a2` FOREIGN KEY (`wkoCompanyId`) REFERENCES `wko_company` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION)",
+  "sqlState": "23000",
+  "index": 0,
+  "sql": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES ('11650876-20f6-4b08-a1ee-a37e0bf3dd7a', 777)",
+  "name": "QueryFailedError",
+  "query": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES (?, ?)",
+  "parameters": [
+    "11650876-20f6-4b08-a1ee-a37e0bf3dd7a",
+    777
+  ]
+} 
+ 
+ "5cb40693-251f-4f84-96ad-855f6b49a00a",
+    "Ing. Philipp Michael Rößler, BSc. MA. -  Digital Consultant | Supply Chain Digitalisierung | Blockchain Consultant",
+    wkoLink Too long
+    
+[Nest] 17288   - 02/24/2021, 3:44:09 PM   Object:
+{
+  "message": "ER_DUP_ENTRY: Duplicate entry '777-8c23b2bb-21cd-4408-aa0c-2bf993ac40a3' for key 'PRIMARY'",
+  "code": "ER_DUP_ENTRY",
+  "errno": 1062,
+  "sqlMessage": "Duplicate entry '777-8c23b2bb-21cd-4408-aa0c-2bf993ac40a3' for key 'PRIMARY'",
+  "sqlState": "23000",
+  "index": 0,
+  "sql": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES ('8c23b2bb-21cd-4408-aa0c-2bf993ac40a3', 777)",
+  "name": "QueryFailedError",
+  "query": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES (?, ?)",
+  "parameters": [
+    "8c23b2bb-21cd-4408-aa0c-2bf993ac40a3",
+    777
+  ]
+}
+
+[Nest] 17288   - 02/24/2021, 3:44:23 PM   Object:
+{
+  "message": "ER_DUP_ENTRY: Duplicate entry '777-aa2cae10-8bc4-45a9-b995-d0c767fc584a' for key 'PRIMARY'",
+  "code": "ER_DUP_ENTRY",
+  "errno": 1062,
+  "sqlMessage": "Duplicate entry '777-aa2cae10-8bc4-45a9-b995-d0c767fc584a' for key 'PRIMARY'",
+  "sqlState": "23000",
+  "index": 0,
+  "sql": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES ('aa2cae10-8bc4-45a9-b995-d0c767fc584a', 777)",
+  "name": "QueryFailedError",
+  "query": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES (?, ?)",
+  "parameters": [
+    "aa2cae10-8bc4-45a9-b995-d0c767fc584a",
+    777
+  ]
+}
+
+[Nest] 17288   - 02/24/2021, 3:44:43 PM   Object:
+{
+  "message": "ER_DUP_ENTRY: Duplicate entry '777-ee9ee7ab-d333-4dbf-bd04-bc56a9c7fe23' for key 'PRIMARY'",
+  "code": "ER_DUP_ENTRY",
+  "errno": 1062,
+  "sqlMessage": "Duplicate entry '777-ee9ee7ab-d333-4dbf-bd04-bc56a9c7fe23' for key 'PRIMARY'",
+  "sqlState": "23000",
+  "index": 0,
+  "sql": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES ('ee9ee7ab-d333-4dbf-bd04-bc56a9c7fe23', 777)",
+  "name": "QueryFailedError",
+  "query": "INSERT INTO `wko_company_locations_tree_entity`(`wkoCompanyId`, `treeEntityId`) VALUES (?, ?)",
+  "parameters": [
+    "ee9ee7ab-d333-4dbf-bd04-bc56a9c7fe23",
+    777
+  ]
+}

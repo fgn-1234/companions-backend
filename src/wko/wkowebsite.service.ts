@@ -34,7 +34,7 @@ const BLOCKED_RESOURCES = [
 
 const COMPANY_SEARCH_RESULT_PAGE_SIZE = 10;
 
-const FETCH_COMPANIES_TEST_AMOUNT = 2;
+const FETCH_COMPANIES_TEST_AMOUNT = 0;
 
 @Injectable()
 export class WkowebsiteService {
@@ -341,7 +341,7 @@ export class WkowebsiteService {
 
 
 
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await page.browser().close();
       return 0;
     }
@@ -354,7 +354,7 @@ export class WkowebsiteService {
   async fetchCompaniesFromSearch(page: Page, resultCount: number, reportProgress: (progress: number) => void, loadingEntry: WkoLoadingHistory) {
     var url = page.url();
     var pagesCount = Math.ceil(resultCount * 1.0 / COMPANY_SEARCH_RESULT_PAGE_SIZE);
-    for (let pageNumber = 1; pageNumber <= pagesCount; pageNumber++) {
+    for (let pageNumber = 1; pageNumber <= pagesCount; pageNumber++) { 
       var urlWithPage = url;
       if (pageNumber > 1)
         urlWithPage += "&page=" + pageNumber;
@@ -507,3 +507,7 @@ export class WkowebsiteService {
     return results;
   }
 }
+
+
+// aktuell automatic call recorder app
+// ansonsten vlt wieder callbox verwenden
