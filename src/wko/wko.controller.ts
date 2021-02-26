@@ -99,4 +99,10 @@ export class WkoController {
         // console.log(JSON.stringify(interaction));
         this.wko.saveInteraction(interaction);
     }
+
+    @Post('updateCompany')
+    async updateCompany(@Body() company: any): Promise<void> {
+        // console.log(JSON.stringify(company));
+        this.wko.saveCompany(company);
+    }
 }
