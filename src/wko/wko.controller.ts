@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post, Query, Headers } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query, Headers, ParseBoolPipe } from '@nestjs/common';
 import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
 import { TreeEntity } from './entities/treeentity.entity';
@@ -42,13 +42,13 @@ export class WkoController {
     }
 
     @Get('companies')
-    async companies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string): Promise<WkoCompanyResponse> {
+    async companies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string, @Query('onlyRemembered', ParseBoolPipe) onlyRemembered: boolean): Promise<WkoCompanyResponse> {
         var locations = await this.parseLocationWkoIdsFromParam(locationsString);
         var categories = await this.parseCategoryWkoIdsFromParam(categoriesString);
-        Logger.debug("Get companies for locations: " + locations + " and cats: " + categories);
+        Logger.debug("Get companies for locations: " + locations + " and cats: " + categories + " and onlyRemembered: " + onlyRemembered);
 
         var result: WkoCompanyResponse = { companies: null, loadingHistory: null };
-        result.companies = await this.wko.getCompanies(locations, categories);
+        result.companies = await this.wko.getCompanies(locations, categories, onlyRemembered);
         // result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
         return result;
     }

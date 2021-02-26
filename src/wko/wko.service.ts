@@ -52,16 +52,18 @@ export class WkoService {
     return this.locationRepo.save(location);
   }
 
-  async getCompanies(locationIds: number[], categoryIds: number[]): Promise<WkoCompany[]> {
+  async getCompanies(locationIds: number[], categoryIds: number[], onlyRemembered: boolean): Promise<WkoCompany[]> {
     var locationLeafIds = await this.getLocationNodeIds(locationIds);
     var categoryLeafIds = await this.getCategoryNodeIds(categoryIds);
-
     var query = this.companyRepo
       .createQueryBuilder("company");
     if (categoryLeafIds.length)
       query.innerJoin('company.categories', 'category', 'category.wkoId IN (:categoryIds)', { categoryIds: categoryLeafIds });
     if (locationLeafIds.length)
       query.innerJoin('company.locations', 'location', 'location.wkoId IN (:locationIds)', { locationIds: locationLeafIds });
+    if (onlyRemembered) {
+      query.andWhere("company.remember = 1");
+    }
     // Logger.debug(query.getQueryAndParameters());
     return query.getMany();
   }
