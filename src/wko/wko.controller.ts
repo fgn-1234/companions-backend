@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post, Query, Headers, ParseBoolPipe } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query, Headers, ParseBoolPipe, DefaultValuePipe } from '@nestjs/common';
 import { WkoCompany } from './entities/wkocompany.entity';
 import { WkoService } from './wko.service';
 import { TreeEntity } from './entities/treeentity.entity';
@@ -42,14 +42,19 @@ export class WkoController {
     }
 
     @Get('companies')
-    async companies(@Query('locations') locationsString: string, @Query('categories') categoriesString: string, @Query('onlyRemembered', ParseBoolPipe) onlyRemembered: boolean): Promise<WkoCompanyResponse> {
+    async companies(@Query('locations') locationsString: string,
+        @Query('categories') categoriesString: string,
+        @Query('onlyRemembered', new DefaultValuePipe(false), ParseBoolPipe) onlyRemembered: boolean,
+        @Query('zeroInteractions', new DefaultValuePipe(false), ParseBoolPipe) zeroInteractions: boolean): Promise<WkoCompanyResponse> {
         var locations = await this.parseLocationWkoIdsFromParam(locationsString);
         var categories = await this.parseCategoryWkoIdsFromParam(categoriesString);
-        Logger.debug("Get companies for locations: " + locations + " and cats: " + categories + " and onlyRemembered: " + onlyRemembered);
+        Logger.debug("Get companies for locations: " + locations + " and cats: " + categories + " and onlyRemembered: " + onlyRemembered + " and zeroInteractions: " + zeroInteractions);
 
         var result: WkoCompanyResponse = { companies: null, loadingHistory: null };
-        result.companies = await this.wko.getCompanies(locations, categories, onlyRemembered);
+        result.companies = await this.wko.getCompanies(locations, categories, onlyRemembered, zeroInteractions);
         // result.loadingHistory = await this.wko.getLoadingHistory(locations, categories);
+        result.companies.forEach(c => c.searchResultHtml = "");
+        
         return result;
     }
 
@@ -80,8 +85,8 @@ export class WkoController {
         if (locations.length > 1 || categories.length > 1)
             throw new Error("Cannot fetch result count for multiple combinations at once");
 
-        var location = locations.length > 0 ? locations[0]: undefined;
-        var category = categories.length > 0 ? categories[0]: undefined;
+        var location = locations.length > 0 ? locations[0] : undefined;
+        var category = categories.length > 0 ? categories[0] : undefined;
         Logger.debug("get companies amount for location: " + location + " and cat: " + category);
 
 

@@ -437,6 +437,7 @@ export class WkowebsiteService {
       company.zip = await this.getPropertyFromSelection(companyResult, '.zip', 'innerHTML');
       company.locality = await this.getPropertyFromSelection(companyResult, '.locality', 'innerHTML');
       company.phone = await this.getPropertyFromSelection(companyResult, '.icon-phone>a', 'innerHTML');
+      company.mobile = await this.getPropertyFromSelection(companyResult, '.icon-mobile>a', 'innerHTML');
       company.fax = await this.getPropertyFromSelection(companyResult, '.icon-fax>a', 'innerHTML');
       company.email = await this.getPropertyFromSelection(companyResult, '.icon-email>a', 'innerHTML');
       company.web = await this.getPropertyFromSelection(companyResult, '.icon-web>a', 'innerHTML');

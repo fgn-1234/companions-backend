@@ -52,18 +52,28 @@ export class WkoService {
     return this.locationRepo.save(location);
   }
 
-  async getCompanies(locationIds: number[], categoryIds: number[], onlyRemembered: boolean): Promise<WkoCompany[]> {
+  async getCompanies(locationIds: number[], 
+    categoryIds: number[], 
+    onlyRemembered: boolean, 
+    zeroInteractions: boolean): Promise<WkoCompany[]> {
     var locationLeafIds = await this.getLocationNodeIds(locationIds);
     var categoryLeafIds = await this.getCategoryNodeIds(categoryIds);
     var query = this.companyRepo
       .createQueryBuilder("company");
-    if (categoryLeafIds.length)
-      query.innerJoin('company.categories', 'category', 'category.wkoId IN (:categoryIds)', { categoryIds: categoryLeafIds });
-    if (locationLeafIds.length)
-      query.innerJoin('company.locations', 'location', 'location.wkoId IN (:locationIds)', { locationIds: locationLeafIds });
+    // if (categoryLeafIds.length)
+      query.innerJoinAndSelect('company.categories', 'category', categoryLeafIds.length ? 'category.wkoId IN (:categoryIds)' : '', { categoryIds: categoryLeafIds });
+    // if (locationLeafIds.length)
+      query.innerJoinAndSelect('company.locations', 'location', locationLeafIds.length ? 'location.wkoId IN (:locationIds)' : '', { locationIds: locationLeafIds });
     if (onlyRemembered) {
       query.andWhere("company.remember = 1");
     }
+    if (zeroInteractions) {
+      query.leftJoin('company.interactions', 'interaction');
+      query.andWhere('interaction.id IS NULL');
+    }
+
+    query.orderBy("company.updatedAt");
+
     // Logger.debug(query.getQueryAndParameters());
     return query.getMany();
   }

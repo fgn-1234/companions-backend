@@ -11,7 +11,7 @@ export class WkoCompanyInteraction {
   text: string;
   @Column()
   companyId: string;
-  @ManyToOne(() => WkoCompany)
+  @ManyToOne(() => WkoCompany, company => company.interactions)
   company: WkoCompany;
 
 }
